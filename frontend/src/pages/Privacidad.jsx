@@ -2,98 +2,67 @@
 import React from 'react';
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import ChatWidget from "../components/ChatWidget";
+import PageHeader from "../components/PageHeader";
 
 const Privacidad = () => {
-    return (
-        // 1. ESTRUCTURA EXACTA DE REGISTRO.JSX (Garantiza que el fondo no se rompa)
-        <div style={{
-            margin: 0,
-            padding: 0,
-            width: "100vw",
-            minHeight: "100vh",
-            backgroundColor: "#141b2d",
-            backgroundSize: "100% 100%", // Clave para que cubra todo
-            color: "white",
-            paddingTop: "3.2rem",
-            display: "flex",
-            flexDirection: "column",
-            position: "relative",
-            overflowX: "hidden",
-            boxSizing: "border-box"
-        }}>
-            <Header />
+  return (
+    <div className="min-h-screen w-full bg-[#0e2246] text-[#F2F2F0] flex flex-col font-sans selection:bg-[#163A70] selection:text-white">
+      <Header />
 
-            <main style={{
-                flexGrow: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center", // Centrado vertical si hay poco texto
-                padding: "2rem",
-                paddingTop: "6rem",
-                width: "100%"
-            }}>
-                
-                {/* TARJETA GLASSMORPHISM */}
-                <div className="max-w-4xl w-full bg-[#1e2538]/60 backdrop-blur-lg border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl relative">
-                    
-                    {/* Detalle decorativo superior (Barra Dorada) */}
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1/3 h-1 bg-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.5)] rounded-b-full"></div>
+      <main className="flex-grow pt-28 pb-24 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
+        {/* Encabezado Editorial */}
+        <PageHeader
+          eyebrow="Protección de Datos · UNISON"
+          title="Aviso de Privacidad"
+          description="Transparencia y resguardo institucional en el tratamiento de credenciales y datos de consulta en Hungry Owl."
+          maxWidth="max-w-4xl"
+        />
 
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-8 border-b border-white/10 pb-6 tracking-tight text-center">
-                        Aviso de Privacidad
-                    </h1>
+        {/* Contenido Editorial */}
+        <div className="space-y-10 text-neutral-300 font-light leading-relaxed text-sm sm:text-base">
+          <section className="border-b border-white/[0.06] pb-8">
+            <h2 className="font-display text-2xl text-[#F2F2F0] mb-2.5 font-normal">
+              1. Privacidad Primero
+            </h2>
+            <p className="text-neutral-300 leading-relaxed">
+              Hungry Owl no comercializa, transfiere ni comparte información de los estudiantes con entidades externas ni empresas de publicidad. La plataforma es un servicio académico sin rastreadores comerciales ni cookies de terceros.
+            </p>
+          </section>
 
-                    <div className="space-y-8 text-gray-300 leading-relaxed text-base md:text-lg">
-                        <p className="italic text-gray-500 text-sm text-center">
-                            Última actualización: Diciembre 2025
-                        </p>
+          <section className="border-b border-white/[0.06] pb-8">
+            <h2 className="font-display text-2xl text-[#F2F2F0] mb-2.5 font-normal">
+              2. Datos de Cuenta y Autenticación
+            </h2>
+            <p className="text-neutral-300 leading-relaxed">
+              Al registrarte en el sistema, almacenamos únicamente tu nombre de usuario, correo institucional (@unison.mx) y tu contraseña debidamente hasheada mediante algoritmos criptográficos seguros. Estos datos se emplean estrictamente para la autenticación y el registro de tu Pasaporte Tragón.
+            </p>
+          </section>
 
-                        <section>
-                            <h2 className="text-xl font-bold text-yellow-500 mb-2 flex items-center gap-2">
-                                1. Recopilación de Datos
-                            </h2>
-                            <p>
-                                Queremos ser transparentes: <strong className="text-white">Este sitio web no utiliza cookies de rastreo de terceros ni vende tu información</strong>.
-                                Respetamos tu privacidad como estudiante y usuario de la comunidad universitaria.
-                            </p>
-                        </section>
+          <section className="border-b border-white/[0.06] pb-8">
+            <h2 className="font-display text-2xl text-[#F2F2F0] mb-2.5 font-normal">
+              3. Ubicación y Geolocalización en Campus
+            </h2>
+            <p className="text-neutral-300 leading-relaxed">
+              La funcionalidad de mapas y el asistente inteligente pueden solicitar tu ubicación GPS para estimar distancias y tiempos de caminata hacia la cafetería más cercana. Estas coordenadas se procesan de forma efímera en la petición y no se almacenan de manera persistente en bases de datos.
+            </p>
+          </section>
 
-                        <section>
-                            <h2 className="text-xl font-bold text-yellow-500 mb-2 flex items-center gap-2">
-                                2. Información de Registro
-                            </h2>
-                            <p>
-                                Si decides registrarte en nuestra plataforma, únicamente almacenamos tu nombre de usuario, contraseña (encriptada) y correo electrónico.
-                                Estos datos se utilizan exclusivamente para permitirte acceder a funciones personalizadas.
-                            </p>
-                        </section>
-
-                        <section>
-                            <h2 className="text-xl font-bold text-yellow-500 mb-2 flex items-center gap-2">
-                                3. Uso de Ubicación (GPS)
-                            </h2>
-                            <p>
-                                La funcionalidad de mapas puede solicitar acceso a tu ubicación GPS únicamente para mostrarte las cafeterías más cercanas en tiempo real.
-                                Esta información se procesa localmente en tu dispositivo y <strong className="text-white">nunca se almacena en nuestros servidores</strong>.
-                            </p>
-                        </section>
-
-                        <section>
-                            <h2 className="text-xl font-bold text-yellow-500 mb-2 flex items-center gap-2">
-                                4. Contacto
-                            </h2>
-                            <p>
-                                Si tienes dudas sobre cómo manejamos tus datos, puedes contactarnos a través de los canales oficiales de la Universidad de Sonora.
-                            </p>
-                        </section>
-                    </div>
-                </div>
-            </main>
-
-            <Footer />
+          <section>
+            <h2 className="font-display text-2xl text-[#F2F2F0] mb-2.5 font-normal">
+              4. Contacto Institucional
+            </h2>
+            <p className="text-neutral-300 leading-relaxed">
+              Para cualquier consulta relacionada con el tratamiento de tus datos o con la administración de tu cuenta, puedes comunicarte con el equipo de desarrollo a través de los canales del Departamento de Matemáticas de la Universidad de Sonora.
+            </p>
+          </section>
         </div>
-    );
+      </main>
+
+      <Footer />
+      <ChatWidget />
+    </div>
+  );
 };
 
 export default Privacidad;

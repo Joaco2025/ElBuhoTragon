@@ -1,254 +1,282 @@
 // src/pages/Cafeterias.jsx
-import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { FiCheckCircle, FiCircle, FiAward, FiMapPin, FiLock } from "react-icons/fi";
-import BuhoChef from "../assets/chef.png"; 
+import ChatWidget from "../components/ChatWidget";
+import CafeCard from "../components/CafeCard";
+import SkeletonCard from "../components/SkeletonCard";
+import { FiLock, FiAward, FiCheckCircle } from "react-icons/fi";
 import BuhoCartel from "../assets/cartel.png";
-import defaultImage from "../assets/logo.png";
+
+// Fotos locales para respaldo
+import Derecho1 from "/Derecho1Card.jpeg";
+import TrabajoSocial from "/TrabajoSocial1Card.jpeg";
+import Educacion from "/Eduacion1Card.jpeg";
+import Derecho2 from "/Derecho2Card.jpeg";
+import Historia from "/Historia1Card.jpeg";
+import Medicina1 from "/Medicina1Card.jpeg";
+import Medicina2 from "/Medicina2Card.jpeg";
+import CivilMinas from "/IngenieriaCivil1Card.jpeg";
+import IngenieriaQuimica from "/IngQuimica1Card.jpeg";
+import Geologia from "/Cafeteria-Geologia1Card.jpeg";
+import Matematicas from "/Matematicas1Card.png";
+import Artes from "/Artes1Card.png";
+
+const imagenesOriginales = {
+  1: Derecho1, 
+  2: TrabajoSocial, 
+  3: Educacion, 
+  4: Derecho2,
+  5: Historia, 
+  6: IngenieriaQuimica, 
+  7: CivilMinas, 
+  8: Medicina1,
+  9: Matematicas, 
+  10: Artes, 
+  11: Geologia, 
+  13: Medicina2,
+  14: CivilMinas
+};
 
 const Cafeterias = () => {
   const [cafeterias, setCafeterias] = useState([]);
-  const [visitedIds, setVisitedIds] = useState([]); // IDs de cafeterías con reseña
+  const [visitedIds, setVisitedIds] = useState([]);
+  const [facultades, setFacultades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
-  
-  const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
+
     const initData = async () => {
       const token = localStorage.getItem("access_token");
       const storedUser = localStorage.getItem("username");
 
       if (!token) {
-        setIsLoggedIn(false);
-        setLoading(false);
+        if (isMounted) {
+          setIsLoggedIn(false);
+          setLoading(false);
+        }
         return;
       }
 
-      setIsLoggedIn(true);
-      setUserName(storedUser || "Tragón");
+      if (isMounted) {
+        setIsLoggedIn(true);
+        setUserName(storedUser || "Estudiante");
+      }
 
-      // 1. Decodificar ID de usuario del Token
       let userId = null;
       try {
         const payloadBase64 = token.split('.')[1];
         const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
         userId = JSON.parse(jsonPayload).user_id;
       } catch (e) {
-        console.error("Error token:", e);
-        setIsLoggedIn(false);
-        setLoading(false);
+        console.error("Error al decodificar credencial:", e);
+        if (isMounted) {
+          setIsLoggedIn(false);
+          setLoading(false);
+        }
         return;
       }
 
       try {
-        // 2. Cargar Cafeterías y TODAS las Reseñas en paralelo
-        const [resCafes, resReviews] = await Promise.all([
-            fetch("http://127.0.0.1:8000/api/Tienditas/"),
-            fetch("http://127.0.0.1:8000/api/Resenas/") 
+        const [resCafes, resReviews, resFacus] = await Promise.all([
+          fetch("http://127.0.0.1:8000/api/Tienditas/"),
+          fetch("http://127.0.0.1:8000/api/Resenas/"),
+          fetch("http://127.0.0.1:8000/api/Facultades/")
         ]);
 
         const cafesData = await resCafes.json();
         const reviewsData = await resReviews.json();
+        const facusData = await resFacus.json();
 
-        setCafeterias(cafesData);
+        if (isMounted) {
+          setCafeterias(cafesData);
+          setFacultades(facusData);
 
-        // 3. Filtrar reseñas del usuario actual
-        // Buscamos qué cafeterías tienen al menos una reseña de este 'userId'
-        const myReviewedCafeIds = reviewsData
-            .filter(r => r.id_usuario === userId)
-            .map(r => r.id_tiendita);
-        
-        // Eliminamos duplicados (Set) y guardamos
-        setVisitedIds([...new Set(myReviewedCafeIds)]);
-        
-        setLoading(false);
+          const myReviewedCafeIds = reviewsData
+            .filter((r) => r.id_usuario === userId)
+            .map((r) => r.id_tiendita);
 
+          setVisitedIds([...new Set(myReviewedCafeIds)]);
+          setLoading(false);
+        }
       } catch (err) {
-        console.error("Error cargando datos:", err);
-        setLoading(false);
+        console.error("Error al cargar datos del pasaporte:", err);
+        if (isMounted) setLoading(false);
       }
     };
 
     initData();
+    return () => { isMounted = false; };
   }, []);
 
-  // Calcular Nivel y Progreso
   const total = cafeterias.length;
   const count = visitedIds.length;
   const progress = total > 0 ? (count / total) * 100 : 0;
 
   let nivel = "Novato";
-  let colorNivel = "text-gray-400";
-  if (progress > 0) { nivel = "Iniciado"; colorNivel = "text-blue-400"; }
-  if (progress > 25) { nivel = "Explorador"; colorNivel = "text-green-400"; }
-  if (progress > 50) { nivel = "Tragón Experto"; colorNivel = "text-yellow-400"; }
-  if (progress > 90) { nivel = "Leyenda del Campus"; colorNivel = "text-purple-400"; }
+  if (progress > 0) nivel = "Iniciado";
+  if (progress > 25) nivel = "Explorador";
+  if (progress > 50) nivel = "Tragón Experto";
+  if (progress > 90) nivel = "Leyenda del Campus";
 
-  // --- VISTA: NO LOGUEADO (Búho Cartel) ---
+  const facultadesMap = useMemo(() => {
+    const map = {};
+    facultades.forEach((f) => {
+      map[f.id_facultad] = f.nombre;
+    });
+    return map;
+  }, [facultades]);
+
+  const isCurrentlyOpen = (apertura, cierre) => {
+    if (!apertura || !cierre) return false;
+    const ahora = new Date();
+    const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes();
+    const [apH, apM] = apertura.split(":").map(Number);
+    const [ciH, ciM] = cierre.split(":").map(Number);
+    const inicio = apH * 60 + apM;
+    const fin = ciH * 60 + ciM;
+    return minutosActuales >= inicio && minutosActuales < fin;
+  };
+
+  // --- VISTA: NO AUTENTICADO ---
   if (!loading && !isLoggedIn) {
-      return (
-        <div style={{
-            minHeight: "100vh",
-            width: "100vw",
-            margin: 0,
-            padding: 0,
-            display: "flex",
-            flexDirection: "column",
-            backgroundColor: "#141b2d",
-            color: "white",
-            overflowX: "hidden",
-        }}>
-            <Header />
-            <main className="flex-grow flex flex-col items-center justify-center pt-20 pb-12 px-4">
-                <div className="relative w-72 md:w-96 animate-float mb-8">
-                    <img src={BuhoCartel} alt="Login Requerido" className="w-full h-auto object-contain drop-shadow-2xl" />
-                    <div className="absolute top-[55%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[65%] text-center rotate-1">
-                        <h1 className="text-[#3e2723] font-black text-2xl font-serif tracking-tighter opacity-90">
-                            ACCESO DENEGADO
-                        </h1>
-                        <p className="text-[#5d4037] font-bold text-xs leading-tight mt-1 font-serif">
-                            Identifícate para ver tu pasaporte.
-                        </p>
-                    </div>
-                </div>
-                <div className="text-center">
-                    <p className="text-gray-400 mb-6 max-w-md mx-auto">
-                        Para rastrear tu progreso y ver qué cafeterías has conquistado, necesitas iniciar sesión.
-                    </p>
-                    <Link to="/login">
-                        <button className="px-8 py-3 bg-yellow-500 text-[#141b2d] font-bold rounded-full shadow-lg hover:bg-yellow-400 hover:scale-105 transition-all flex items-center gap-2 mx-auto">
-                            <FiLock /> Iniciar Sesión
-                        </button>
-                    </Link>
-                </div>
-            </main>
-            <Footer />
-            <style jsx>{` @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } } .animate-float { animation: float 4s ease-in-out infinite; } `}</style>
-        </div>
-      );
+    return (
+      <div className="min-h-screen w-full bg-[#0e2246] text-[#F2F2F0] flex flex-col font-sans selection:bg-[#163A70] selection:text-white">
+        <Header />
+        <main className="flex-grow flex flex-col items-center justify-center pt-32 pb-24 px-4 text-center max-w-lg mx-auto">
+          <img 
+            src={BuhoCartel} 
+            alt="" 
+            className="w-40 h-40 object-contain opacity-85 mb-8 filter contrast-110" 
+          />
+          <span className="font-mono text-xs uppercase tracking-[0.25em] text-[#B39A3A] block mb-2 font-medium">
+            Pasaporte Tragón · UNISON
+          </span>
+          <h1 className="font-display text-4xl sm:text-5xl text-[#F2F2F0] font-normal mb-3">
+            Acceso Requerido
+          </h1>
+          <p className="text-neutral-300 text-sm font-light mb-8 leading-relaxed">
+            Inicia sesión con tu cuenta universitaria para consultar tu historial de visitas, registrar opiniones y desbloquear tus avances en el campus.
+          </p>
+          <Link to="/login">
+            <button className="px-6 py-2.5 bg-white text-black text-xs font-mono uppercase tracking-wider rounded-full hover:bg-neutral-200 transition-colors flex items-center gap-2 cursor-pointer font-medium">
+              <FiLock size={13} />
+              <span>Iniciar Sesión</span>
+            </button>
+          </Link>
+        </main>
+        <Footer />
+        <ChatWidget />
+      </div>
+    );
   }
 
   return (
-    <div style={{
-        minHeight: "100vh",
-        width: "100vw",
-        margin: 0,
-        padding: 0,
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "#141b2d",
-        color: "white",
-        overflowX: "hidden",
-    }}>
+    <div className="min-h-screen w-full bg-[#0e2246] text-[#F2F2F0] flex flex-col font-sans selection:bg-[#163A70] selection:text-white">
       <Header />
 
-      <main className="flex-grow pt-28 pb-12 px-4 md:px-8 lg:px-16 w-full max-w-6xl mx-auto">
-        
-        {/* --- HEADER DEL PASAPORTE --- */}
-        <div className="bg-[#1e2538]/60 backdrop-blur-lg border border-white/10 rounded-3xl p-8 mb-12 flex flex-col md:flex-row items-center gap-8 shadow-2xl relative overflow-hidden">
-            
-            {/* Barra de progreso */}
-            <div className="absolute bottom-0 left-0 h-1.5 bg-gray-700 w-full">
-                <div 
-                    className="h-full bg-gradient-to-r from-yellow-500 to-green-500 transition-all duration-1000 ease-out" 
-                    style={{ width: `${progress}%` }}
-                ></div>
+      <main className="flex-grow pt-28 pb-28 px-4 sm:px-8 lg:px-16 max-w-7xl mx-auto w-full">
+        {/* --- ENCABEZADO EDITORIAL DEL PASAPORTE --- */}
+        <section className="mb-16 border-b border-white/[0.08] pb-12" aria-label="Resumen de avance del estudiante">
+          <span className="font-mono text-xs uppercase tracking-[0.25em] text-[#B39A3A] block mb-2 font-medium">
+            Registro Académico de Visitas
+          </span>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+            <div className="max-w-2xl">
+              <h1 className="font-display text-4xl sm:text-6xl text-[#F2F2F0] font-normal tracking-tight mb-2">
+                Pasaporte de {userName}
+              </h1>
+              <p className="text-neutral-300 text-sm font-light leading-relaxed">
+                Acredita cada cafetería asistiendo al local y compartiendo una reseña verificada con la comunidad universitaria.
+              </p>
             </div>
 
-            <div className="relative group">
-                <img src={BuhoChef} alt="Nivel" className="w-32 h-32 object-contain drop-shadow-[0_0_15px_rgba(234,179,8,0.4)] group-hover:scale-110 transition-transform duration-300" />
-                <div className="absolute -bottom-2 -right-2 bg-[#141b2d] text-white text-xs font-bold px-2 py-1 rounded-full border border-white/20">
-                    {Math.round(progress)}%
-                </div>
+            {/* Resumen de Métricas */}
+            <div className="flex items-center gap-6 sm:gap-8 text-xs font-mono text-neutral-300 bg-[#071326]/60 border border-white/[0.08] p-4 rounded-2xl backdrop-blur-sm">
+              <div>
+                <span className="text-neutral-400 uppercase tracking-widest text-[10px] block mb-0.5">Rango</span>
+                <strong className="text-[#B39A3A] text-base font-display font-medium flex items-center gap-1">
+                  <FiAward size={14} />
+                  {nivel}
+                </strong>
+              </div>
+              <span className="text-white/20" aria-hidden="true">/</span>
+              <div>
+                <span className="text-neutral-400 uppercase tracking-widest text-[10px] block mb-0.5">Conquistas</span>
+                <strong className="text-white text-base font-mono font-medium">
+                  {count} <span className="text-xs text-neutral-400 font-light">de {total}</span>
+                </strong>
+              </div>
+              <span className="text-white/20" aria-hidden="true">/</span>
+              <div>
+                <span className="text-neutral-400 uppercase tracking-widest text-[10px] block mb-0.5">Progreso</span>
+                <strong className="text-emerald-400 text-base font-mono font-medium">{Math.round(progress)}%</strong>
+              </div>
             </div>
+          </div>
 
-            <div className="text-center md:text-left flex-1">
-                <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">
-                    Pasaporte de <span className="text-yellow-500">{userName}</span>
-                </h1>
-                <p className="text-gray-400 mb-4 text-sm">
-                    Para marcar una cafetería como visitada, ¡ve y deja una reseña sincera!
-                </p>
-                
-                <div className="inline-flex items-center gap-4 bg-[#141b2d] px-5 py-3 rounded-xl border border-white/5">
-                    <FiAward className={colorNivel} size={32} />
-                    <div className="text-left">
-                        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Rango Actual</p>
-                        <p className={`font-extrabold text-xl ${colorNivel}`}>{nivel}</p>
-                    </div>
-                    <div className="h-10 w-px bg-white/10 mx-2"></div>
-                    <div className="text-left">
-                        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Conquistas</p>
-                        <p className="font-extrabold text-xl text-white">{count} <span className="text-sm text-gray-500 font-normal">/ {total}</span></p>
-                    </div>
-                </div>
-            </div>
-        </div>
+          {/* Barra Minimalista de Progreso */}
+          <div className="mt-8 h-1.5 bg-white/[0.08] w-full rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-emerald-400 transition-all duration-700 ease-out" 
+              style={{ width: `${progress}%` }}
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-label="Porcentaje de cafeterías visitadas"
+            />
+          </div>
+        </section>
 
-        {/* --- GRID DE CAFETERÍAS --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cafeterias.map((cafe) => {
+        {/* --- GALERÍA UNIFORME DE CAFETERÍAS --- */}
+        <section aria-label="Catálogo del Pasaporte">
+          <div className="flex items-baseline justify-between border-b border-white/[0.08] pb-3 mb-10">
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-300 font-medium">
+              Directorio Universitario ({cafeterias.length})
+            </span>
+            <span className="text-xs font-mono text-emerald-400 flex items-center gap-1.5">
+              <FiCheckCircle size={13} />
+              <span>{count} acreditadas</span>
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-7">
+            {loading ? (
+              <SkeletonCard count={8} />
+            ) : (
+              cafeterias.map((cafe, index) => {
                 const isVisited = visitedIds.includes(cafe.id_tiendita);
+                const isOpen = isCurrentlyOpen(cafe.hora_apertura, cafe.hora_cierre);
                 return (
-                    <div 
-                        key={cafe.id_tiendita}
-                        onClick={() => navigate(`/cafeterias/${cafe.id_tiendita}`)}
-                        className={`
-                            relative group cursor-pointer rounded-2xl overflow-hidden border transition-all duration-300 flex items-center p-4 gap-4
-                            ${isVisited 
-                                ? "bg-[#1e2538] border-green-500/40 shadow-[0_0_15px_rgba(34,197,94,0.1)] hover:border-green-400" 
-                                : "bg-[#1e2538]/40 border-white/5 hover:border-white/20 hover:bg-[#1e2538]/60"}
-                        `}
-                    >
-                        {/* Estado: Visitado o Pendiente */}
-                        <div className={`
-                            absolute top-3 right-3 p-1.5 rounded-full 
-                            ${isVisited ? "bg-green-500 text-[#141b2d]" : "bg-black/40 text-gray-500"}
-                        `}>
-                            {isVisited ? <FiCheckCircle size={18} /> : <FiCircle size={18} />}
-                        </div>
-
-                        <img 
-                            src={cafe.imagen_url || defaultImage} 
-                            alt={cafe.nombre}
-                            className={`w-20 h-20 rounded-xl object-cover transition-all duration-500 ${isVisited ? "" : "grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100"}`}
-                            onError={(e) => { e.target.src = defaultImage; }}
-                        />
-                        
-                        <div className="flex-1 pr-6">
-                            <h3 className={`font-bold text-sm mb-1 leading-tight ${isVisited ? "text-white" : "text-gray-400 group-hover:text-white"}`}>
-                                {cafe.nombre}
-                            </h3>
-                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
-                                <FiMapPin size={10} />
-                                <span className="truncate max-w-[120px]">{cafe.direccion || "Campus Central"}</span>
-                            </div>
-                            
-                            {/* Call to Action dinámico */}
-                            {isVisited ? (
-                                <span className="text-[10px] font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded border border-green-400/20">
-                                    CONQUISTADA
-                                </span>
-                            ) : (
-                                <span className="text-[10px] font-bold text-yellow-500/70 group-hover:text-yellow-400 transition-colors flex items-center gap-1">
-                                    Ir a opinar &rarr;
-                                </span>
-                            )}
-                        </div>
-                    </div>
+                  <CafeCard
+                    key={cafe.id_tiendita}
+                    cafe={cafe}
+                    index={index}
+                    isOpen={isOpen}
+                    isVisited={isVisited}
+                    facultadNombre={facultadesMap[cafe.id_facultad] || "UNISON"}
+                    imageSrc={imagenesOriginales[cafe.id_tiendita]}
+                  />
                 );
-            })}
-        </div>
-
+              })
+            )}
+          </div>
+        </section>
       </main>
+
       <Footer />
+      <ChatWidget />
     </div>
   );
 };

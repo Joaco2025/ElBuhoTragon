@@ -2,153 +2,170 @@
 import React, { useState } from 'react';
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { FiMail, FiMapPin, FiGithub } from 'react-icons/fi';
+import ChatWidget from "../components/ChatWidget";
+import PageHeader from "../components/PageHeader";
+import { FiMail, FiMapPin, FiGithub, FiCheck } from 'react-icons/fi';
 
 const Contacto = () => {
-    const [enviado, setEnviado] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [email, setEmail] = useState('');
+  const [mensaje, setMensaje] = useState('');
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // Aquí iría la conexión con el backend para enviar el correo real
-        setEnviado(true);
-    };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setEnviado(true);
+  };
 
-    return (
-        // 1. ESTRUCTURA SEGURA (Fondo CSS Inline)
-        <div style={{
-            minHeight: "100vh",
-            width: "100vw",
-            margin: 0,
-            padding: 0,
-            display: "flex",
-            flexDirection: "column",
-            backgroundColor: "#141b2d", // Azul Nocturno Oficial
-            color: "white",
-            overflowX: "hidden",
-            position: "relative"
-        }}>
-            <Header />
+  return (
+    <div className="min-h-screen w-full bg-[#0e2246] text-[#F2F2F0] flex flex-col font-sans selection:bg-[#163A70] selection:text-white">
+      <Header />
 
-            {/* 2. CONTENIDO PRINCIPAL */}
-            <main style={{ flexGrow: 1, paddingTop: '8rem' }} className="px-6 pb-20 w-full flex justify-center">
-                
-                <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-12">
+      <main className="flex-grow pt-28 pb-24 px-4 sm:px-8 lg:px-16 max-w-6xl mx-auto w-full">
+        {/* Encabezado Editorial */}
+        <PageHeader
+          eyebrow="Universidad de Sonora · Campus Hermosillo"
+          title="Contacto & Soporte"
+          description="¿Detectaste alguna modificación en menús, precios desactualizados o deseas sugerir información de una cafetería? Envíanos tus observaciones."
+          maxWidth="max-w-6xl"
+        />
 
-                    {/* Columna Izquierda: Info */}
-                    <div className="flex flex-col justify-center">
-                        <h1 className="text-4xl font-extrabold text-white mb-6 tracking-tight">
-                            Contáctanos
-                        </h1>
-                        <p className="text-gray-400 mb-8 text-lg leading-relaxed">
-                            ¿Encontraste un error en el menú? ¿Quieres sugerir una nueva cafetería o reportar un bug?
-                            <br />Estamos aquí para escucharte.
-                        </p>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+          {/* Columna Izquierda: Información Académica */}
+          <div className="lg:col-span-5 space-y-8">
+            <div>
+              <span className="font-mono text-xs uppercase tracking-widest text-[#B39A3A] block mb-2 flex items-center gap-2 font-medium">
+                <FiMapPin size={14} />
+                <span>Ubicación Académica</span>
+              </span>
+              <p className="text-sm text-neutral-300 font-light leading-relaxed">
+                Universidad de Sonora<br />
+                Departamento de Matemáticas<br />
+                Licenciatura en Ciencias de la Computación<br />
+                Hermosillo, Sonora, México
+              </p>
+            </div>
 
-                        <div className="space-y-8">
-                            <div className="flex items-start gap-4 group">
-                                <div className="bg-[#1e2538] p-4 rounded-xl border border-white/10 text-yellow-500 group-hover:border-yellow-500/50 transition-colors shadow-lg">
-                                    <FiMapPin size={24} />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-white text-lg">Ubicación</h3>
-                                    <p className="text-gray-400 text-sm mt-1">
-                                        Universidad de Sonora<br/>
-                                        Departamento de Matemáticas<br/>
-                                        Licenciatura en Ciencias de la Computación<br/>
-                                        Hermosillo, Sonora
-                                    </p>
-                                </div>
-                            </div>
+            <div>
+              <span className="font-mono text-xs uppercase tracking-widest text-[#B39A3A] block mb-2 flex items-center gap-2 font-medium">
+                <FiMail size={14} />
+                <span>Correo Institucional</span>
+              </span>
+              <p className="text-sm font-mono text-neutral-300">
+                a223201053@unison.mx
+              </p>
+            </div>
 
-                            <div className="flex items-center gap-4 group">
-                                <div className="bg-[#1e2538] p-4 rounded-xl border border-white/10 text-yellow-500 group-hover:border-yellow-500/50 transition-colors shadow-lg">
-                                    <FiMail size={24} />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-white text-lg">Correo Electrónico</h3>
-                                    <p className="text-gray-400 text-sm mt-1">a223201053@unison.mx</p>
-                                </div>
-                            </div>
+            <div>
+              <span className="font-mono text-xs uppercase tracking-widest text-[#B39A3A] block mb-2 flex items-center gap-2 font-medium">
+                <FiGithub size={14} />
+                <span>Repositorio del Proyecto</span>
+              </span>
+              <a 
+                href="https://github.com/OwenSolis03/IS2_ElBuhoTragon" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-xs font-mono text-neutral-300 hover:text-white underline inline-block"
+              >
+                github.com/OwenSolis03/IS2_ElBuhoTragon ↗
+              </a>
+            </div>
+          </div>
 
-                            <div className="flex items-center gap-4 group">
-                                <div className="bg-[#1e2538] p-4 rounded-xl border border-white/10 text-yellow-500 group-hover:border-yellow-500/50 transition-colors shadow-lg">
-                                    <FiGithub size={24} />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-white text-lg">Proyecto Open Source</h3>
-                                    <a href="https://github.com/OwenSolis03/IS2_ElBuhoTragon" target="_blank" rel="noopener noreferrer" className="text-blue-400 text-sm mt-1 hover:underline">
-                                        github.com/OwenSolis03/IS2_ElBuhoTragon
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Columna Derecha: Formulario (Glassmorphism) */}
-                    <div className="bg-[#1e2538]/60 backdrop-blur-lg border border-white/10 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
-                        
-                        {/* Decoración superior */}
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-600 to-yellow-400"></div>
-
-                        {enviado ? (
-                            <div className="h-full flex flex-col items-center justify-center text-center py-10 animate-fade-in">
-                                <div className="text-green-400 text-7xl mb-6 drop-shadow-[0_0_10px_rgba(74,222,128,0.5)]">✓</div>
-                                <h3 className="text-3xl font-bold text-white mb-2">¡Mensaje Enviado!</h3>
-                                <p className="text-gray-400 mb-8">Gracias por tus comentarios. El equipo del Búho los leerá pronto.</p>
-                                <button
-                                    onClick={() => setEnviado(false)}
-                                    className="px-6 py-2 border border-yellow-500/50 text-yellow-500 rounded-full hover:bg-yellow-500 hover:text-[#141b2d] transition-all font-bold"
-                                >
-                                    Enviar otro mensaje
-                                </button>
-                            </div>
-                        ) : (
-                            <form onSubmit={handleSubmit} className="space-y-5">
-                                <h2 className="text-2xl font-bold text-white mb-6">Envíanos un mensaje</h2>
-                                
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Nombre</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full bg-[#141b2d] border border-gray-600 rounded-xl p-3 text-white focus:border-yellow-500 focus:outline-none transition-colors placeholder-gray-600"
-                                        placeholder="Tu nombre"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Correo</label>
-                                    <input
-                                        type="email"
-                                        required
-                                        className="w-full bg-[#141b2d] border border-gray-600 rounded-xl p-3 text-white focus:border-yellow-500 focus:outline-none transition-colors placeholder-gray-600"
-                                        placeholder="tucorreo@ejemplo.com"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Mensaje</label>
-                                    <textarea
-                                        rows="4"
-                                        required
-                                        className="w-full bg-[#141b2d] border border-gray-600 rounded-xl p-3 text-white focus:border-yellow-500 focus:outline-none transition-colors resize-none placeholder-gray-600"
-                                        placeholder="¿En qué podemos ayudarte?"
-                                    ></textarea>
-                                </div>
-                                <button
-                                    type="submit"
-                                    className="w-full bg-yellow-500 hover:bg-yellow-400 text-[#141b2d] font-bold py-3.5 rounded-xl transition-transform transform hover:scale-[1.02] shadow-lg mt-2"
-                                >
-                                    Enviar Mensaje
-                                </button>
-                            </form>
-                        )}
-                    </div>
-
+          {/* Columna Derecha: Formulario */}
+          <div className="lg:col-span-7">
+            <div className="p-8 rounded-2xl bg-[#0a1830] border border-white/[0.1] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)]">
+              {enviado ? (
+                <div className="py-12 text-center space-y-4 animate-fade-in">
+                  <div className="w-12 h-12 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto">
+                    <FiCheck size={24} />
+                  </div>
+                  <h3 className="font-display text-3xl text-white font-normal">
+                    Mensaje Recibido
+                  </h3>
+                  <p className="text-neutral-300 text-sm font-light max-w-sm mx-auto leading-relaxed">
+                    Agradecemos tus observaciones. El equipo de desarrollo del proyecto revisará tu reporte para actualizar el catálogo.
+                  </p>
+                  <button
+                    onClick={() => { setEnviado(false); setNombre(''); setEmail(''); setMensaje(''); }}
+                    className="mt-4 px-6 py-2 rounded-full bg-white text-black text-xs font-mono uppercase tracking-wider hover:bg-neutral-200 transition-colors font-medium cursor-pointer"
+                  >
+                    Enviar otro mensaje
+                  </button>
                 </div>
-            </main>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <label 
+                      htmlFor="contacto-nombre" 
+                      className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1.5 font-medium"
+                    >
+                      Nombre Completo
+                    </label>
+                    <input
+                      id="contacto-nombre"
+                      type="text"
+                      required
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      placeholder="Tu nombre y apellido"
+                      className="w-full bg-[#071326] border border-white/[0.12] focus:border-[#B39A3A] text-white text-sm rounded-xl px-4 py-3 placeholder-neutral-400 focus:outline-none transition-colors font-sans"
+                    />
+                  </div>
 
-            <Footer />
+                  <div>
+                    <label 
+                      htmlFor="contacto-email" 
+                      className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1.5 font-medium"
+                    >
+                      Correo Electrónico
+                    </label>
+                    <input
+                      id="contacto-email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="correo@ejemplo.com"
+                      className="w-full bg-[#071326] border border-white/[0.12] focus:border-[#B39A3A] text-white text-sm rounded-xl px-4 py-3 placeholder-neutral-400 focus:outline-none transition-colors font-sans"
+                    />
+                  </div>
+
+                  <div>
+                    <label 
+                      htmlFor="contacto-mensaje" 
+                      className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1.5 font-medium"
+                    >
+                      Mensaje u Observación
+                    </label>
+                    <textarea
+                      id="contacto-mensaje"
+                      required
+                      rows="4"
+                      value={mensaje}
+                      onChange={(e) => setMensaje(e.target.value)}
+                      placeholder="Indica qué cafetería, platillo o sugerencia deseas compartir..."
+                      className="w-full bg-[#071326] border border-white/[0.12] focus:border-[#B39A3A] text-white text-sm rounded-xl p-4 placeholder-neutral-400 focus:outline-none transition-colors resize-none font-sans leading-relaxed"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-white text-black font-sans text-xs font-mono uppercase tracking-wider rounded-full hover:bg-neutral-200 transition-colors cursor-pointer font-medium"
+                  >
+                    Enviar Mensaje
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
         </div>
-    );
+      </main>
+
+      <Footer />
+      <ChatWidget />
+    </div>
+  );
 };
 
 export default Contacto;

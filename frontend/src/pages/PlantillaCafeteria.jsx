@@ -1,17 +1,25 @@
 // src/pages/PlantillaCafeteria.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom"; 
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { FaStar } from "react-icons/fa";
-import { FiUser, FiMapPin, FiClock, FiSearch, FiMessageSquare, FiCheckCircle, FiAlertCircle, FiX } from "react-icons/fi";
 import ChatWidget from "../components/ChatWidget";
+import { FaStar } from "react-icons/fa";
+import { 
+  FiMapPin, 
+  FiSearch, 
+  FiCheckCircle, 
+  FiAlertCircle, 
+  FiX, 
+  FiArrowLeft,
+  FiExternalLink,
+  FiUser
+} from "react-icons/fi";
+
 import defaultImage from "../assets/logo.png";
-import MenuIcon from "../assets/menu.png";
-import BuhoZZZ from "../assets/zzz.png"; 
 import BuhoCartel from "../assets/cartel.png"; 
 
-// --- MAPA (Leaflet) ---
+// Leaflet
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -19,11 +27,11 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34]
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34]
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
@@ -44,71 +52,90 @@ const PlantillaCafeteria = () => {
   // Estado Buscador
   const [searchTerm, setSearchTerm] = useState("");
 
-  // --- ESTADO PARA NOTIFICACIONES (TOASTS) ---
-  const [notification, setNotification] = useState(null); // { message: "", type: "success" | "error" }
+  // Estado para Notificaciones Toasts
+  const [notification, setNotification] = useState(null);
 
-  // Función para mostrar notificaciones bonitas
   const showNotification = (message, type = "success") => {
-      setNotification({ message, type });
-      // Auto-ocultar después de 4 segundos
-      setTimeout(() => {
-          setNotification(null);
-      }, 4000);
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 4000);
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const resInfo = await fetch(`http://127.0.0.1:8000/api/Tienditas/${id}/`);
-        if (!resInfo.ok) {
-            setInfo(null);
-            setLoading(false);
-            return;
-        }
-        const dataInfo = await resInfo.json();
-        setInfo(dataInfo);
-
-        const resMenu = await fetch(`http://127.0.0.1:8000/api/Menus/?id_tiendita=${id}`);
-        const dataMenu = await resMenu.json();
-        setMenuItems(dataMenu);
-
-        fetchResenas();
-        setLoading(false);
-      } catch (error) {
-        console.error(error);
-        setLoading(false);
-      }
-    };
-    fetchData();
+  const fetchResenas = useCallback(() => {
+    fetch(`http://127.0.0.1:8000/api/Resenas/?id_tiendita=${id}`)
+      .then((res) => res.json())
+      .then((data) => setReviews(Array.isArray(data) ? data : []))
+      .catch((err) => console.error("Error al cargar reseñas:", err));
   }, [id]);
 
-  const fetchResenas = () => {
-    fetch(`http://127.0.0.1:8000/api/Resenas/?id_tiendita=${id}`)
-      .then(res => res.json())
-      .then(data => setReviews(data))
-      .catch(err => console.error(err));
-  };
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+
+    const fetchData = async () => {
+      try {
+        const [resInfo, resMenu] = await Promise.all([
+          fetch(`http://127.0.0.1:8000/api/Tienditas/${id}/`),
+          fetch(`http://127.0.0.1:8000/api/Menus/?id_tiendita=${id}`)
+        ]);
+
+        if (!resInfo.ok) {
+          if (isMounted) {
+            setInfo(null);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const dataInfo = await resInfo.json();
+        const dataMenu = await resMenu.json();
+
+        if (isMounted) {
+          setInfo(dataInfo);
+          setMenuItems(Array.isArray(dataMenu) ? dataMenu : []);
+          fetchResenas();
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error al cargar información de la cafetería:", error);
+        if (isMounted) {
+          setInfo(null);
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+    return () => { isMounted = false; };
+  }, [id, fetchResenas]);
 
   const handleSubmitResena = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("access_token");
     
-    // VALIDACIONES CON TOAST
-    if (!token) return showNotification("Debes iniciar sesión para comentar.", "error");
-    if (rating === 0) return showNotification("Por favor, califica con estrellas.", "error");
+    if (!token) return showNotification("Debes iniciar sesión con tu cuenta UNISON para compartir tu opinión.", "error");
+    if (rating === 0) return showNotification("Por favor, selecciona una calificación con estrellas.", "error");
+    if (!comentario.trim()) return showNotification("Por favor, redacta un breve comentario de tu experiencia.", "error");
 
     setSubmitting(true);
 
     let userId = null;
     try {
-        const payloadBase64 = token.split('.')[1];
-        const decodedPayload = JSON.parse(atob(payloadBase64));
-        userId = decodedPayload.user_id; 
+      const payloadBase64 = token.split('.')[1];
+      const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      userId = JSON.parse(jsonPayload).user_id;
     } catch (err) {
-        console.error("Error token:", err);
-        showNotification("Tu sesión no es válida. Inicia sesión de nuevo.", "error");
-        setSubmitting(false);
-        return;
+      console.error("Error al decodificar token:", err);
+      showNotification("Tu sesión no es válida. Por favor inicia sesión nuevamente.", "error");
+      setSubmitting(false);
+      return;
     }
 
     try {
@@ -119,34 +146,28 @@ const PlantillaCafeteria = () => {
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          id_tiendita: id,
+          id_tiendita: parseInt(id),
           calificacion: rating,
-          comentario: comentario,
+          comentario: comentario.trim(),
           id_usuario: userId 
         })
       });
 
       if (res.ok) {
-        showNotification("¡Reseña publicada con éxito!", "success");
+        showNotification("Reseña publicada con éxito. Tu visita ha sido acreditada.", "success");
         setRating(0);
         setComentario("");
         fetchResenas();
       } else {
-        if (res.status === 401) {
-            localStorage.clear(); 
-            window.dispatchEvent(new Event("storage")); 
-            showNotification("Sesión expirada. Redirigiendo...", "error");
-            setTimeout(() => window.location.href = "/login", 2000);
-            return;
-        }
-        const errorData = await res.json();
-        showNotification(`Error: ${JSON.stringify(errorData)}`, "error");
+        const errorData = await res.json().catch(() => ({}));
+        showNotification(errorData.detail || "Error al publicar la reseña. Intenta más tarde.", "error");
       }
     } catch (error) { 
-        console.error(error); 
-        showNotification("Error de conexión con el servidor.", "error");
+      console.error("Error de conexión al enviar reseña:", error); 
+      showNotification("Error de conexión con el servidor.", "error");
+    } finally { 
+      setSubmitting(false); 
     }
-    finally { setSubmitting(false); }
   };
 
   const formatDate = (isoString) => {
@@ -154,225 +175,438 @@ const PlantillaCafeteria = () => {
     return new Date(isoString).toLocaleDateString("es-MX", { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
-  const filteredMenuItems = menuItems.filter(item => 
-    item.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  const isCurrentlyOpen = (apertura, cierre) => {
+    if (!apertura || !cierre) return false;
+    const ahora = new Date();
+    const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes();
+    const [apH, apM] = apertura.split(":").map(Number);
+    const [ciH, ciM] = cierre.split(":").map(Number);
+    const inicio = apH * 60 + apM;
+    const fin = ciH * 60 + ciM;
+    return minutosActuales >= inicio && minutosActuales < fin;
+  };
+
+  const filteredMenuItems = menuItems.filter((item) => 
+    item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.categoria && item.categoria.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // --- 1. PANTALLA DE CARGA ---
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[#141b2d] flex flex-col items-center justify-center text-white">
-        <div className="animate-pulse">
-          <img src={BuhoZZZ} alt="Cargando..." className="w-48 h-48 object-contain drop-shadow-2xl"/>
-        </div>
-        <h2 className="text-2xl font-bold text-yellow-500 mt-8 animate-pulse tracking-wide">
-          Preparando el menú...
-        </h2>
-        <p className="text-gray-400 text-sm mt-2 font-medium">El búho está despertando.</p>
-      </div>
-    );
-  }
-  
-  // --- 2. PANTALLA 404 ---
-  if (!info) {
-      return (
-        <div style={{minHeight: "100vh", width: "100vw", display: "flex", flexDirection: "column", backgroundColor: "#141b2d", color: "white", overflowX: "hidden"}}>
-            <Header />
-            <main className="flex-grow flex flex-col items-center justify-center pt-20 pb-12">
-                <div className="relative w-72 md:w-96 animate-float mb-8">
-                    <img src={BuhoCartel} alt="No encontrado" className="w-full h-auto object-contain drop-shadow-2xl" />
-                    <div className="absolute top-[55%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[65%] text-center rotate-1">
-                        <h1 className="text-[#3e2723] font-black text-4xl font-serif tracking-tighter opacity-90">404</h1>
-                        <p className="text-[#5d4037] font-bold text-sm leading-tight mt-1 font-serif">¡Esta cafetería no existe!</p>
-                    </div>
-                </div>
-                <div className="text-center px-4">
-                    <p className="text-gray-400 max-w-md mx-auto mb-6">Parece que el ID de la cafetería es incorrecto o fue eliminada.</p>
-                    <Link to="/"><button className="px-8 py-3 bg-yellow-500 text-[#141b2d] font-bold rounded-full shadow-lg hover:bg-yellow-400 hover:scale-105 transition-all">Regresar al Inicio</button></Link>
-                </div>
-            </main>
-            <Footer />
-            <style jsx>{` @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } } .animate-float { animation: float 4s ease-in-out infinite; } `}</style>
-        </div>
-      );
-  }
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((a, b) => a + b.calificacion, 0) / reviews.length).toFixed(1) 
+    : null;
 
-  // --- 3. VISTA PRINCIPAL ---
   return (
-    <div style={{
-        minHeight: "100vh",
-        width: "100vw",
-        margin: 0,
-        padding: 0,
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "#141b2d",
-        color: "white",
-        overflowX: "hidden",
-        position: "relative"
-    }}>
+    <div className="min-h-screen w-full bg-[#0e2246] text-[#F2F2F0] flex flex-col font-sans selection:bg-[#163A70] selection:text-white">
       <Header />
 
-      {/* --- NOTIFICACIÓN FLOTANTE (TOAST) --- */}
+      {/* --- NOTIFICACIÓN FLOTANTE (TOAST SOBRIO) --- */}
       {notification && (
-          <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-[100] animate-bounce-in">
-              <div className={`
-                  flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl border
-                  ${notification.type === 'success' 
-                      ? 'bg-[#1e2538] border-green-500 text-green-400' 
-                      : 'bg-[#1e2538] border-red-500 text-red-400'}
-              `}>
-                  {notification.type === 'success' ? <FiCheckCircle size={24} /> : <FiAlertCircle size={24} />}
-                  <div>
-                      <h4 className="font-bold text-sm uppercase tracking-wider text-white">
-                          {notification.type === 'success' ? 'Éxito' : 'Error'}
-                      </h4>
-                      <p className="text-sm font-medium text-gray-300">{notification.message}</p>
-                  </div>
-                  <button onClick={() => setNotification(null)} className="ml-4 text-gray-500 hover:text-white">
-                      <FiX />
-                  </button>
-              </div>
+        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-[100] animate-fade-in">
+          <div className={`flex items-center gap-3 px-5 py-3 rounded-full shadow-2xl backdrop-blur-md text-xs font-mono tracking-wider uppercase ${
+            notification.type === 'success' 
+              ? 'bg-[#071326]/95 border border-emerald-500/40 text-emerald-300' 
+              : 'bg-[#071326]/95 border border-rose-500/40 text-rose-300'
+          }`}>
+            {notification.type === 'success' ? <FiCheckCircle size={16} /> : <FiAlertCircle size={16} />}
+            <span>{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-3 text-neutral-400 hover:text-white cursor-pointer"
+              aria-label="Cerrar notificación"
+            >
+              <FiX size={14} />
+            </button>
           </div>
+        </div>
       )}
 
-      <main className="flex-grow pt-28 pb-12 px-4 md:px-8 lg:px-16 w-full max-w-7xl mx-auto z-10">
-        
-        {/* --- ENCABEZADO --- */}
-        <div className="relative mb-8 rounded-3xl overflow-hidden shadow-2xl border border-white/10 group bg-[#1e2538]">
-             <div className="h-64 md:h-80 w-full relative">
-                <img src={info.imagen_url || defaultImage} alt={info.nombre} className="w-full h-full object-cover" onError={(e) => { e.target.src = defaultImage; }} />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#141b2d] via-[#141b2d]/60 to-transparent"></div>
-             </div>
-             <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 flex flex-col md:flex-row justify-between items-end gap-4">
-                <div>
-                    <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-2 drop-shadow-lg tracking-tight">{info.nombre}</h1>
-                    <div className="flex flex-wrap gap-4 text-sm md:text-base font-medium text-gray-200">
-                        {info.direccion && (<span className="flex items-center gap-1.5 bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10"><FiMapPin className="text-yellow-500" /> {info.direccion}</span>)}
-                        {info.hora_apertura && info.hora_cierre && (<span className="flex items-center gap-1.5 bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10"><FiClock className="text-green-400" /> {info.hora_apertura.slice(0,5)} - {info.hora_cierre.slice(0,5)}</span>)}
-                    </div>
-                </div>
-                <div className="bg-yellow-500 text-[#141b2d] px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg">
-                    <FaStar /> 
-                    <span>{reviews.length > 0 ? (reviews.reduce((a,b) => a + b.calificacion, 0) / reviews.length).toFixed(1) : "N/A"}</span>
-                    <span className="text-xs font-normal opacity-80">({reviews.length} ops)</span>
-                </div>
-             </div>
-        </div>
+      {/* ========================================================= */}
+      {/* PANTALLA DE CARGA (PRESERVANDO HEADER Y FOOTER)           */}
+      {/* ========================================================= */}
+      {loading ? (
+        <main className="flex-grow pt-28 pb-28 px-4 sm:px-8 lg:px-16 max-w-7xl mx-auto w-full animate-pulse">
+          <div className="h-6 w-36 bg-white/[0.08] rounded mb-6" />
+          <div className="h-14 w-2/3 bg-white/[0.1] rounded mb-4" />
+          <div className="h-5 w-48 bg-white/[0.06] rounded mb-16" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-                {/* --- MENÚ --- */}
-                <div className="bg-[#1e2538]/80 backdrop-blur-lg border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col">
-                    <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 border-b border-white/10 pb-4">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3"><img src={MenuIcon} alt="Menú" className="w-8 h-8 object-contain drop-shadow-sm" />Menú del Día</h2>
-                        <div className="relative w-full sm:w-64">
-                            <input type="text" placeholder="Buscar platillo..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-[#141b2d] border border-gray-600 rounded-full focus:outline-none focus:ring-1 focus:ring-yellow-500 text-sm transition-all text-gray-200" />
-                            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                        </div>
-                    </div>
-                    <div className="relative group/scroll">
-                        <div className="grid grid-rows-2 grid-flow-col gap-4 overflow-x-auto pb-4 custom-scrollbar">
-                            {filteredMenuItems.length === 0 ? (
-                                <div className="text-center py-10 text-gray-400 w-full col-span-full row-span-2 flex flex-col items-center justify-center">
-                                    <p className="text-lg font-medium">{searchTerm ? "No encontramos ese platillo" : "Menú no disponible"}</p>
-                                </div>
-                            ) : (
-                                filteredMenuItems.map((item, index) => (
-                                    <div key={index} className="w-[250px] bg-[#141b2d]/60 p-4 rounded-xl border border-white/5 hover:border-yellow-500/40 transition-all hover:bg-[#141b2d] flex flex-col justify-between h-[140px]">
-                                        <div>
-                                            <div className="flex justify-between items-start mb-1">
-                                                <h3 className="font-bold text-gray-100 text-sm leading-tight line-clamp-1" title={item.nombre}>{item.nombre}</h3>
-                                                <span className="bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded text-xs font-mono font-bold whitespace-nowrap ml-2">${parseFloat(item.precio).toFixed(0)}</span>
-                                            </div>
-                                            {item.descripcion && (<p className="text-xs text-gray-400 italic leading-snug line-clamp-2">{item.descripcion}</p>)}
-                                        </div>
-                                        <button className="mt-auto w-full py-1 text-[10px] font-bold uppercase tracking-wider text-yellow-500 border border-yellow-500/30 rounded hover:bg-yellow-500/10 transition-colors">Recomendar</button>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="lg:col-span-8 space-y-6">
+              <div className="h-8 w-44 bg-white/[0.08] rounded mb-4" />
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="py-4 border-b border-white/[0.06] flex justify-between items-center">
+                  <div className="space-y-2">
+                    <div className="h-4 w-48 bg-white/[0.08] rounded" />
+                    <div className="h-3 w-32 bg-white/[0.05] rounded" />
+                  </div>
+                  <div className="h-5 w-12 bg-white/[0.08] rounded" />
                 </div>
-
-                {/* --- RESEÑAS --- */}
-                <div className="bg-[#1e2538]/80 backdrop-blur-lg border border-white/10 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2 border-b border-white/10 pb-4"><FiMessageSquare className="text-yellow-500" /> Opiniones de la comunidad</h2>
-                    <div className="bg-[#141b2d]/50 p-4 rounded-xl border border-white/5 mb-8">
-                        <p className="text-sm text-gray-400 mb-3 text-center">Comparte tu experiencia</p>
-                        <div className="flex justify-center gap-2 mb-4">
-                             {[...Array(5)].map((_, index) => (
-                                <FaStar key={index} size={24} className={`cursor-pointer transition-transform hover:scale-110 ${index + 1 <= (hover || rating) ? "text-yellow-400" : "text-gray-600"}`} onMouseEnter={() => setHover(index + 1)} onMouseLeave={() => setHover(0)} onClick={() => setRating(index + 1)} />
-                             ))}
-                        </div>
-                        <textarea className="w-full p-3 bg-[#1e2538] text-white rounded-lg border border-gray-600 focus:border-yellow-500 focus:outline-none text-sm resize-none mb-3" rows="2" placeholder="¿Qué tal estuvo la comida?" value={comentario} onChange={(e) => setComentario(e.target.value)} />
-                        <button onClick={handleSubmitResena} disabled={submitting} className="w-full py-2 bg-yellow-500 text-[#141b2d] font-bold rounded-lg hover:bg-yellow-400 disabled:opacity-50 text-sm transition-colors shadow-lg">{submitting ? "Publicando..." : "Publicar Reseña"}</button>
-                    </div>
-                    <div className="space-y-4">
-                        {reviews.length === 0 ? (
-                            <p className="text-center text-gray-500 text-sm">Sé el primero en opinar.</p>
-                        ) : (
-                            reviews.map((review) => (
-                                <div key={review.id_resena} className="border-b border-white/5 pb-4 last:border-0">
-                                    <div className="flex justify-between items-start mb-1">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-xs font-bold text-white border border-white/10"><FiUser /></div>
-                                            <div>
-                                                <p className="font-bold text-sm text-gray-200">{review.nombre_usuario || "Anónimo"}</p>
-                                                <div className="flex text-yellow-500 text-[10px]">{[...Array(5)].map((_, i) => <FaStar key={i} className={i < review.calificacion ? "" : "text-gray-700"} />)}</div>
-                                            </div>
-                                        </div>
-                                        <span className="text-[10px] text-gray-500">{formatDate(review.fecha_registro)}</span>
-                                    </div>
-                                    <p className="text-gray-400 text-sm pl-10 leading-relaxed">{review.comentario}</p>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
+              ))}
+            </div>
+            <div className="lg:col-span-4 space-y-6">
+              <div className="h-64 rounded-2xl bg-white/[0.06]" />
+            </div>
+          </div>
+        </main>
+      ) : !info ? (
+        /* --- ESTADO 404 / NO ENCONTRADO --- */
+        <main className="flex-grow flex flex-col items-center justify-center pt-32 pb-24 px-4 text-center max-w-lg mx-auto">
+          <img src={BuhoCartel} alt="" className="w-36 h-36 object-contain opacity-80 mb-6 filter contrast-110" />
+          <span className="font-mono text-xs uppercase tracking-[0.25em] text-neutral-400 block mb-2 font-medium">404</span>
+          <h1 className="font-display text-4xl sm:text-5xl text-[#F2F2F0] font-normal mb-3">
+            Local no encontrado
+          </h1>
+          <p className="text-neutral-300 text-sm font-light mb-8 leading-relaxed">
+            El identificador seleccionado no corresponde a ninguna cafetería registrada en el campus de la Universidad de Sonora.
+          </p>
+          <Link 
+            to="/" 
+            className="px-6 py-2.5 bg-white text-black text-xs font-mono uppercase tracking-wider rounded-full hover:bg-neutral-200 transition-colors font-medium"
+          >
+            Volver al Directorio
+          </Link>
+        </main>
+      ) : (
+        /* --- DETALLE PRINCIPAL DE LA CAFETERÍA --- */
+        <>
+          {/* HERO ATMOSFÉRICO DE LA CAFETERÍA */}
+          <section className="relative w-full pt-28 pb-16 border-b border-white/[0.08] overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden">
+              <img 
+                src={info.imagen_url || defaultImage} 
+                alt="" 
+                className="w-full h-full object-cover opacity-25 filter contrast-115" 
+                onError={(e) => { e.target.src = defaultImage; }} 
+              />
+              <div className="absolute inset-0 bg-[#0e2246]/50 mix-blend-multiply" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0e2246] via-[#0e2246]/50 to-[#0e2246]/85" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0e2246] via-transparent to-[#0e2246]" />
             </div>
 
-            {/* COLUMNA DERECHA (Mapa) */}
-            <div className="lg:col-span-1 space-y-8">
-                {info.latitud && info.longitud && (
-                    <div className="bg-[#1e2538]/80 backdrop-blur-lg border border-white/10 rounded-2xl shadow-xl overflow-hidden sticky top-24">
-                        <div className="bg-[#141b2d] p-3 border-b border-white/5"><h3 className="text-center text-sm font-bold text-gray-300 uppercase tracking-wider">Ubicación Exacta</h3></div>
-                        <div className="h-64 w-full z-0 relative">
-                            <MapContainer center={[info.latitud, info.longitud]} zoom={17} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
-                                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='© OpenStreetMap' />
-                                <Marker position={[info.latitud, info.longitud]}><Popup>{info.nombre}</Popup></Marker>
-                            </MapContainer>
-                            <a href={`https://www.google.com/maps/search/?api=1&query=${info.latitud},${info.longitud}`} target="_blank" rel="noreferrer" className="absolute bottom-2 right-2 z-[400] bg-white text-black text-xs px-2 py-1 rounded shadow font-bold hover:bg-gray-200">Abrir GPS ↗</a>
-                        </div>
-                        <div className="p-4 bg-[#141b2d]">
-                             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-                                <h3 className="font-bold text-yellow-500 mb-2 flex items-center gap-2 text-sm">Tip del Búho</h3>
-                                <p className="text-xs text-yellow-100/70 leading-relaxed">Recuerda que los horarios pueden variar en días festivos o periodos vacacionales. ¡Siempre revisa el estado en tiempo real en la página principal!</p>
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 lg:px-16 w-full pt-4">
+              <Link 
+                to="/" 
+                className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-neutral-300 hover:text-white transition-colors mb-6"
+              >
+                <FiArrowLeft size={13} />
+                <span>Directorio de Cafeterías</span>
+              </Link>
+
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+                <div className="max-w-3xl">
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    {isCurrentlyOpen(info.hora_apertura, info.hora_cierre) ? (
+                      <span className="font-mono text-xs tracking-[0.2em] uppercase font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-3 py-1 rounded-full flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        ABIERTO
+                      </span>
+                    ) : (
+                      <span className="font-mono text-xs tracking-[0.2em] uppercase font-medium text-rose-400 bg-rose-950/60 border border-rose-500/30 px-3 py-1 rounded-full flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                        CERRADO
+                      </span>
+                    )}
+
+                    {info.hora_apertura && info.hora_cierre && (
+                      <>
+                        <span className="text-white/20" aria-hidden="true">/</span>
+                        <span className="font-mono text-xs text-neutral-300">
+                          {info.hora_apertura.slice(0, 5)} – {info.hora_cierre.slice(0, 5)}
+                        </span>
+                      </>
+                    )}
+
+                    {averageRating && (
+                      <>
+                        <span className="text-white/20" aria-hidden="true">/</span>
+                        <span className="font-mono text-xs text-[#B39A3A] flex items-center gap-1.5">
+                          <FaStar size={12} />
+                          <strong className="text-white">{averageRating}</strong>
+                          <span className="text-neutral-400">({reviews.length} opiniones)</span>
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-normal text-[#F2F2F0] tracking-tight leading-[1.05]">
+                    {info.nombre}
+                  </h1>
+
+                  {info.direccion && (
+                    <p className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-300 mt-3 flex items-center gap-1.5 font-light">
+                      <FiMapPin size={13} className="text-[#B39A3A]" />
+                      <span>{info.direccion}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* CONTENIDO PRINCIPAL: MENÚ Y RESEÑAS */}
+          <main className="flex-grow pt-14 pb-28 px-4 sm:px-8 lg:px-16 max-w-7xl mx-auto w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+              
+              {/* COLUMNA PRINCIPAL (CARTA + OPINIONES) */}
+              <div className="lg:col-span-8 space-y-16">
+                
+                {/* SECCIÓN: CARTA Y MENÚ */}
+                <section aria-label="Carta de platillos">
+                  <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 border-b border-white/[0.08] pb-4 mb-8">
+                    <div>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-[#B39A3A] block mb-1 font-medium">
+                        Carta Oficial
+                      </span>
+                      <h2 className="font-display text-3xl sm:text-4xl font-normal text-[#F2F2F0]">
+                        Menú del día
+                      </h2>
+                    </div>
+
+                    {/* Buscador de platillo integrado */}
+                    <div className="relative w-full sm:w-64 border-b border-white/20 pb-1 focus-within:border-[#B39A3A] transition-colors">
+                      <label htmlFor="dish-search-input" className="sr-only">Buscar platillo en la carta</label>
+                      <input 
+                        id="dish-search-input"
+                        type="text" 
+                        placeholder="Buscar platillo..." 
+                        value={searchTerm} 
+                        onChange={(e) => setSearchTerm(e.target.value)} 
+                        className="w-full bg-transparent text-sm text-neutral-200 placeholder-neutral-400 focus:outline-none pr-6" 
+                      />
+                      {searchTerm ? (
+                        <button 
+                          onClick={() => setSearchTerm("")} 
+                          className="absolute right-0 top-1 text-neutral-400 hover:text-white cursor-pointer"
+                          aria-label="Limpiar búsqueda de platillo"
+                        >
+                          <FiX size={14} />
+                        </button>
+                      ) : (
+                        <FiSearch className="absolute right-0 top-1 text-neutral-400 pointer-events-none" size={14} />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Lista de Platillos */}
+                  {filteredMenuItems.length === 0 ? (
+                    <div className="py-16 text-center text-neutral-400 font-light space-y-2">
+                      <p className="text-base">
+                        {searchTerm ? "No hay platillos coincidentes con el término ingresado." : "Carta de platillos en proceso de actualización."}
+                      </p>
+                      {searchTerm && (
+                        <button
+                          onClick={() => setSearchTerm("")}
+                          className="text-xs font-mono uppercase tracking-wider text-[#B39A3A] underline cursor-pointer"
+                        >
+                          Ver toda la carta
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-white/[0.06]">
+                      {filteredMenuItems.map((item, index) => (
+                        <div 
+                          key={item.id_menu || index} 
+                          className="py-4 flex items-baseline justify-between gap-6 group hover:bg-white/[0.02] px-3 transition-colors rounded-xl"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline gap-3 flex-wrap">
+                              <h3 className="font-sans text-base sm:text-lg font-medium text-[#F2F2F0] group-hover:text-white transition-colors">
+                                {item.nombre}
+                              </h3>
+                              {item.categoria && (
+                                <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-300 bg-white/[0.06] px-2 py-0.5 rounded border border-white/[0.06] flex-shrink-0">
+                                  {item.categoria}
+                                </span>
+                              )}
                             </div>
+                            {item.descripcion && (
+                              <p className="text-xs text-neutral-300 font-light mt-1 max-w-xl leading-relaxed">
+                                {item.descripcion}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="text-right flex-shrink-0">
+                            <span className="font-mono text-base font-semibold text-[#B39A3A]">
+                              ${parseFloat(item.precio).toFixed(2)}
+                            </span>
+                          </div>
                         </div>
+                      ))}
                     </div>
+                  )}
+                </section>
+
+                {/* SECCIÓN: RESEÑAS Y OPINIONES */}
+                <section className="pt-8 border-t border-white/[0.08]" aria-label="Opiniones de estudiantes">
+                  <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mb-8">
+                    <div>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-[#B39A3A] block mb-1 font-medium">
+                        Comunidad Universitaria
+                      </span>
+                      <h2 className="font-display text-3xl sm:text-4xl font-normal text-[#F2F2F0]">
+                        Opiniones ({reviews.length})
+                      </h2>
+                    </div>
+                    {averageRating && (
+                      <span className="font-mono text-xs text-neutral-300">
+                        Promedio general: <strong className="text-white font-medium">{averageRating} / 5.0</strong>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Formulario de Reseña */}
+                  <form onSubmit={handleSubmitResena} className="mb-12 p-6 rounded-2xl bg-[#0a1830] border border-white/[0.08] shadow-lg">
+                    <span className="font-mono text-xs uppercase tracking-widest text-[#B39A3A] block mb-3 font-medium">
+                      Comparte tu experiencia en este local
+                    </span>
+
+                    {/* Selector de Estrellas Accesible */}
+                    <div className="flex items-center gap-1.5 mb-4" role="group" aria-label="Calificación en estrellas de 1 a 5">
+                      {[1, 2, 3, 4, 5].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setRating(val)}
+                          onMouseEnter={() => setHover(val)}
+                          onMouseLeave={() => setHover(0)}
+                          className="p-1 text-neutral-600 hover:text-[#B39A3A] transition-colors cursor-pointer focus:outline-none"
+                          aria-label={`${val} estrellas`}
+                        >
+                          <FaStar 
+                            size={22} 
+                            className={val <= (hover || rating) ? "text-[#B39A3A]" : "text-neutral-600"} 
+                          />
+                        </button>
+                      ))}
+                      <span className="ml-3 font-mono text-xs text-neutral-300">
+                        {rating > 0 ? `${rating} de 5 estrellas` : "Selecciona tu valoración"}
+                      </span>
+                    </div>
+
+                    <label htmlFor="review-textarea" className="sr-only">Comentario sobre la cafetería</label>
+                    <textarea 
+                      id="review-textarea"
+                      className="w-full p-4 bg-[#071326] text-[#F2F2F0] rounded-xl border border-white/[0.1] focus:border-[#B39A3A] focus:outline-none text-sm placeholder-neutral-400 resize-none mb-4 font-sans leading-relaxed" 
+                      rows="3" 
+                      placeholder="Comenta sobre la calidad de los alimentos, atención, rapidez o precios..." 
+                      value={comentario} 
+                      onChange={(e) => setComentario(e.target.value)} 
+                    />
+
+                    <div className="flex justify-end">
+                      <button 
+                        type="submit" 
+                        disabled={submitting} 
+                        className="px-6 py-2.5 bg-white text-black font-sans text-xs font-mono uppercase tracking-wider rounded-full hover:bg-neutral-200 transition-colors disabled:opacity-50 cursor-pointer font-medium"
+                      >
+                        {submitting ? "Publicando..." : "Publicar Reseña"}
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Lista de Reseñas */}
+                  <div className="space-y-6">
+                    {reviews.length === 0 ? (
+                      <p className="text-center py-10 text-neutral-400 text-sm font-light">
+                        Aún no hay opiniones registradas para este establecimiento. Sé el primero en acreditar tu visita.
+                      </p>
+                    ) : (
+                      reviews.map((review) => (
+                        <article 
+                          key={review.id_resena} 
+                          className="py-5 border-b border-white/[0.06] last:border-none"
+                        >
+                          <div className="flex items-baseline justify-between gap-4 mb-2">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 rounded-full bg-[#163A70] flex items-center justify-center text-[10px] text-white">
+                                <FiUser size={12} />
+                              </div>
+                              <span className="font-sans font-medium text-sm text-white">
+                                {review.nombre_usuario || "Estudiante UNISON"}
+                              </span>
+                              <div className="flex text-[#B39A3A] text-xs">
+                                {[...Array(5)].map((_, i) => (
+                                  <FaStar 
+                                    key={i} 
+                                    className={i < review.calificacion ? "text-[#B39A3A]" : "text-neutral-700"} 
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <span className="font-mono text-[11px] text-neutral-400">
+                              {formatDate(review.fecha_registro)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-neutral-300 font-light leading-relaxed pl-9">
+                            {review.comentario}
+                          </p>
+                        </article>
+                      ))
+                    )}
+                  </div>
+                </section>
+              </div>
+
+              {/* COLUMNA LATERAL (MAPA E INFORMACIÓN) */}
+              <div className="lg:col-span-4 space-y-8">
+                {info.latitud && info.longitud && (
+                  <aside className="sticky top-28 space-y-6">
+                    <div className="p-6 rounded-2xl bg-[#0a1830] border border-white/[0.08] shadow-lg">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-[#B39A3A] block mb-4 font-medium">
+                        Ubicación en Campus
+                      </span>
+
+                      <div className="h-60 w-full rounded-xl overflow-hidden border border-white/[0.1] relative mb-4 leaflet-dark-tiles">
+                        <MapContainer 
+                          center={[parseFloat(info.latitud), parseFloat(info.longitud)]} 
+                          zoom={17} 
+                          style={{ height: "100%", width: "100%", background: "#071326" }} 
+                          scrollWheelZoom={false}
+                        >
+                          <TileLayer 
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' 
+                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" 
+                          />
+                          <Marker position={[parseFloat(info.latitud), parseFloat(info.longitud)]}>
+                            <Popup>{info.nombre}</Popup>
+                          </Marker>
+                        </MapContainer>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="font-mono text-xs text-neutral-400">
+                          Coordenadas registradas
+                        </span>
+                        <a 
+                          href={`https://www.google.com/maps/search/?api=1&query=${info.latitud},${info.longitud}`} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="text-xs font-mono text-[#B39A3A] hover:underline inline-flex items-center gap-1 font-medium"
+                        >
+                          <span>Abrir GPS</span>
+                          <FiExternalLink size={12} />
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Nota Institucional */}
+                    <div className="p-6 rounded-2xl bg-[#0a1830]/60 border border-white/[0.06] text-xs text-neutral-300 font-light leading-relaxed">
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-[#B39A3A] block mb-2 font-medium">
+                        Aviso Institucional
+                      </span>
+                      Los horarios y cartas de platillos están sujetos al calendario oficial, periodo de exámenes y periodos vacacionales de la Universidad de Sonora.
+                    </div>
+                  </aside>
                 )}
+              </div>
             </div>
-        </div>
-      </main>
-      <ChatWidget />
+          </main>
+        </>
+      )}
+
       <Footer />
-      <style jsx>{` 
-        .custom-scrollbar::-webkit-scrollbar { height: 8px; } 
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; } 
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; } 
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(234, 179, 8, 0.5); } 
-        
-        /* Animación de entrada suave para el Toast */
-        @keyframes bounceIn {
-            0% { transform: translate(-50%, -100%); opacity: 0; }
-            60% { transform: translate(-50%, 10%); opacity: 1; }
-            100% { transform: translate(-50%, 0); }
-        }
-        .animate-bounce-in {
-            animation: bounceIn 0.5s ease-out forwards;
-        }
-      `}</style>
+      <ChatWidget />
     </div>
   );
 };

@@ -2,7 +2,22 @@
 import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiImage, FiList, FiMessageSquare, FiUser } from "react-icons/fi";
+import ChatWidget from "../components/ChatWidget";
+import PageHeader from "../components/PageHeader";
+import ConfirmModal from "../components/ConfirmModal";
+import { 
+  FiPlus, 
+  FiEdit2, 
+  FiTrash2, 
+  FiX, 
+  FiSave, 
+  FiImage, 
+  FiList, 
+  FiMessageSquare, 
+  FiUser, 
+  FiCheckCircle, 
+  FiAlertCircle 
+} from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
 
 const AdminDashboard = () => {
@@ -10,44 +25,67 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [facultades, setFacultades] = useState([]);
 
-  // --- ESTADOS DE MODALES ---
+  // Estados de Modales
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   
-  // --- ESTADOS PARA EDICIÓN DE CAFETERÍA ---
+  // Estados para Edición de Cafetería
   const [editingCafe, setEditingCafe] = useState(null);
   const [cafeMenu, setCafeMenu] = useState([]); 
-  
-  // ESTADO: Reseñas de la cafetería actual
   const [cafeReviews, setCafeReviews] = useState([]);
-
   const [activeTab, setActiveTab] = useState("info");
 
-  // --- ESTADOS PARA EDICIÓN DE MENÚ ---
+  // Estados para Edición de Menú
   const [newMenuItem, setNewMenuItem] = useState({ nombre: "", precio: "", descripcion: "", categoria: "" });
   const [editingMenuItemId, setEditingMenuItemId] = useState(null);
 
-  // --- ESTADO PARA CREAR CAFETERÍA ---
+  // Estado para Crear Cafetería
   const [newCafe, setNewCafe] = useState({
     nombre: "", direccion: "", id_facultad: "", latitud: "", longitud: "", imagen_url: "", hora_apertura: "", hora_cierre: ""
   });
 
-  const categoriasComida = ["Desayuno", "Almuerzo", "Comida", "Comida Corrida", "Vegana / Vegetariana", "Fit / Saludable", "Bebidas", "Postres", "Snacks"];
+  // Estado para Toasts de Notificación
+  const [notification, setNotification] = useState(null);
+
+  // Estado para ConfirmModal destructivo
+  const [confirmState, setConfirmState] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
+
+  const showToast = (message, type = "success") => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
+
+  const categoriasComida = [
+    "Desayuno", 
+    "Almuerzo", 
+    "Comida", 
+    "Comida Corrida", 
+    "Vegana / Vegetariana", 
+    "Fit / Saludable", 
+    "Bebidas", 
+    "Postres", 
+    "Snacks"
+  ];
+
+  const fetchCafeterias = () => {
+    fetch("http://127.0.0.1:8000/api/Tienditas/")
+      .then((res) => res.json())
+      .then((data) => { setCafeterias(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch((err) => { console.error("Error al cargar cafeterías:", err); setLoading(false); });
+  };
 
   useEffect(() => {
     fetchCafeterias();
     fetch("http://127.0.0.1:8000/api/Facultades/")
       .then((res) => res.json())
-      .then((data) => setFacultades(data))
-      .catch((err) => console.error("Error facultades:", err));
+      .then((data) => setFacultades(Array.isArray(data) ? data : []))
+      .catch((err) => console.error("Error al cargar facultades:", err));
   }, []);
-
-  const fetchCafeterias = () => {
-    fetch("http://127.0.0.1:8000/api/Tienditas/")
-      .then((res) => res.json())
-      .then((data) => { setCafeterias(data); setLoading(false); })
-      .catch((err) => console.error("Error cafeterías:", err));
-  };
 
   const handleImageUpload = (e, isEditing = false) => {
     const file = e.target.files[0];
@@ -65,7 +103,10 @@ const AdminDashboard = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!newCafe.nombre || !newCafe.id_facultad) return alert("Falta nombre o facultad");
+    if (!newCafe.nombre || !newCafe.id_facultad) {
+      return showToast("Falta ingresar nombre o facultad del local.", "error");
+    }
+
     try {
       const res = await fetch("http://127.0.0.1:8000/api/Tienditas/", {
         method: "POST",
@@ -76,9 +117,14 @@ const AdminDashboard = () => {
         fetchCafeterias();
         setShowModal(false);
         setNewCafe({ nombre: "", direccion: "", id_facultad: "", latitud: "", longitud: "", imagen_url: "", hora_apertura: "", hora_cierre: "" });
-        alert("Cafetería creada");
+        showToast("Cafetería registrada exitosamente.", "success");
+      } else {
+        showToast("Error al registrar la cafetería.", "error");
       }
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+      console.error(error); 
+      showToast("Error de conexión con el servidor.", "error");
+    }
   };
 
   const openEditModal = (cafe) => {
@@ -90,14 +136,14 @@ const AdminDashboard = () => {
     
     // 1. Cargar Menú
     fetch(`http://127.0.0.1:8000/api/Menus/?id_tiendita=${cafe.id_tiendita}`)
-      .then(res => res.json())
-      .then(data => setCafeMenu(data));
+      .then((res) => res.json())
+      .then((data) => setCafeMenu(Array.isArray(data) ? data : []));
 
     // 2. Cargar Reseñas
     fetch(`http://127.0.0.1:8000/api/Resenas/?id_tiendita=${cafe.id_tiendita}`)
-      .then(res => res.json())
-      .then(data => setCafeReviews(data))
-      .catch(err => console.error("Error cargando reseñas", err));
+      .then((res) => res.json())
+      .then((data) => setCafeReviews(Array.isArray(data) ? data : []))
+      .catch((err) => console.error("Error al cargar reseñas:", err));
   };
 
   const handleUpdateCafe = async (e) => {
@@ -109,20 +155,25 @@ const AdminDashboard = () => {
         body: JSON.stringify(editingCafe)
       });
       if (res.ok) {
-        alert("Cafetería actualizada");
+        showToast("Información de cafetería actualizada correctamente.", "success");
         fetchCafeterias();
         setShowEditModal(false);
+      } else {
+        showToast("Error al actualizar la cafetería.", "error");
       }
-    } catch (error) { console.error(error); }
+    } catch (error) { 
+      console.error(error); 
+      showToast("Error de conexión con el servidor.", "error");
+    }
   };
 
   // --- GESTIÓN DEL MENÚ ---
   const startEditMenuItem = (item) => {
     setNewMenuItem({
-        nombre: item.nombre,
-        precio: item.precio,
-        descripcion: item.descripcion || "",
-        categoria: item.categoria || ""
+      nombre: item.nombre,
+      precio: item.precio,
+      descripcion: item.descripcion || "",
+      categoria: item.categoria || ""
     });
     setEditingMenuItemId(item.id_menu);
   };
@@ -133,278 +184,638 @@ const AdminDashboard = () => {
   };
 
   const handleSaveMenuItem = async () => {
-    if (!newMenuItem.nombre || !newMenuItem.precio) return alert("Falta nombre o precio");
+    if (!newMenuItem.nombre || !newMenuItem.precio) {
+      return showToast("Falta ingresar nombre o precio del platillo.", "error");
+    }
 
     const url = editingMenuItemId 
-        ? `http://127.0.0.1:8000/api/Menus/${editingMenuItemId}/` 
-        : "http://127.0.0.1:8000/api/Menus/"; 
+      ? `http://127.0.0.1:8000/api/Menus/${editingMenuItemId}/` 
+      : "http://127.0.0.1:8000/api/Menus/";
     
     const method = editingMenuItemId ? "PUT" : "POST";
+
+    const payload = {
+      ...newMenuItem,
+      id_tiendita: editingCafe.id_tiendita,
+      precio: parseFloat(newMenuItem.precio)
+    };
 
     try {
       const res = await fetch(url, {
         method: method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...newMenuItem, id_tiendita: editingCafe.id_tiendita })
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
-        const savedItem = await res.json();
-        
-        if (editingMenuItemId) {
-            setCafeMenu(cafeMenu.map(item => item.id_menu === editingMenuItemId ? savedItem : item));
-            alert("Platillo actualizado");
-        } else {
-            setCafeMenu([...cafeMenu, savedItem]);
-        }
+        showToast(editingMenuItemId ? "Platillo modificado con éxito." : "Platillo agregado a la carta.", "success");
         cancelEditMenuItem();
+        fetch(`http://127.0.0.1:8000/api/Menus/?id_tiendita=${editingCafe.id_tiendita}`)
+          .then((r) => r.json())
+          .then((d) => setCafeMenu(Array.isArray(d) ? d : []));
+      } else {
+        showToast("Error al guardar el platillo.", "error");
       }
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error(error);
+      showToast("Error de conexión con el servidor.", "error");
+    }
   };
 
-  const handleDeleteMenuItem = async (id) => {
-    if(!window.confirm("¿Borrar platillo?")) return;
-    await fetch(`http://127.0.0.1:8000/api/Menus/${id}/`, { method: "DELETE" });
-    setCafeMenu(cafeMenu.filter(item => item.id_menu !== id));
+  const handleDeleteMenuItem = (id) => {
+    setConfirmState({
+      isOpen: true,
+      title: "Eliminar Platillo",
+      message: "¿Deseas eliminar este platillo de la carta de la cafetería?",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`http://127.0.0.1:8000/api/Menus/${id}/`, { method: "DELETE" });
+          if (res.ok) {
+            setCafeMenu((prev) => prev.filter((item) => item.id_menu !== id));
+            showToast("Platillo eliminado de la carta.", "success");
+          } else {
+            showToast("No se pudo eliminar el platillo.", "error");
+          }
+        } catch (error) {
+          console.error(error);
+          showToast("Error de conexión.", "error");
+        } finally {
+          setConfirmState((prev) => ({ ...prev, isOpen: false }));
+        }
+      }
+    });
   };
 
-  // --- GESTIÓN DE RESEÑAS (CORREGIDO CON TOKEN) ---
-  const handleDeleteReview = async (id) => {
-      if(!window.confirm("¿Estás seguro de eliminar esta reseña permanentemente?")) return;
-      
-      // 1. OBTENEMOS EL TOKEN
-      const token = localStorage.getItem("access_token");
-
-      try {
-          const res = await fetch(`http://127.0.0.1:8000/api/Resenas/${id}/`, { 
-              method: "DELETE",
-              // 2. ENVIAMOS EL TOKEN EN LOS HEADERS
-              headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${token}`
-              }
+  // --- MODERACIÓN DE RESEÑAS ---
+  const handleDeleteReview = (id) => {
+    setConfirmState({
+      isOpen: true,
+      title: "Eliminar Opinión",
+      message: "¿Deseas retirar esta reseña de forma permanente?",
+      onConfirm: async () => {
+        const token = localStorage.getItem("access_token");
+        try {
+          const res = await fetch(`http://127.0.0.1:8000/api/Resenas/${id}/`, {
+            method: "DELETE",
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
           });
 
-          if(res.ok) {
-              setCafeReviews(cafeReviews.filter(r => r.id_resena !== id));
-              alert("Reseña eliminada.");
+          if (res.ok) {
+            setCafeReviews((prev) => prev.filter((r) => r.id_resena !== id));
+            showToast("Reseña retirada de la plataforma.", "success");
           } else {
-              alert("Error al eliminar. Verifica permisos.");
+            showToast("Error al eliminar la reseña. Verifica permisos.", "error");
           }
-      } catch (error) {
+        } catch (error) {
           console.error(error);
-          alert("Error de conexión");
+          showToast("Error de conexión con el servidor.", "error");
+        } finally {
+          setConfirmState((prev) => ({ ...prev, isOpen: false }));
+        }
       }
+    });
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("¿Eliminar cafetería?")) return;
-    await fetch(`http://127.0.0.1:8000/api/Tienditas/${id}/`, { method: "DELETE" });
-    fetchCafeterias();
+  const handleDelete = (id, nombreCafe) => {
+    setConfirmState({
+      isOpen: true,
+      title: "Eliminar Cafetería",
+      message: `¿Estás seguro de eliminar "${nombreCafe || 'esta cafetería'}" permanentemente del directorio? Esta acción no se puede deshacer.`,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`http://127.0.0.1:8000/api/Tienditas/${id}/`, { method: "DELETE" });
+          if (res.ok) {
+            fetchCafeterias();
+            showToast("Cafetería eliminada del catálogo.", "success");
+          } else {
+            showToast("Error al eliminar la cafetería.", "error");
+          }
+        } catch (error) {
+          console.error(error);
+          showToast("Error de conexión.", "error");
+        } finally {
+          setConfirmState((prev) => ({ ...prev, isOpen: false }));
+        }
+      }
+    });
   };
 
   return (
-    <div style={{ margin: 0, padding: 0, width: "100vw", minHeight: "100vh", backgroundColor: "#141b2d", backgroundSize: "100% 100%", color: "white", paddingTop: "3.2rem", display: "flex", flexDirection: "column", position: "relative", overflowX: "hidden", boxSizing: "border-box" }}>
+    <div className="min-h-screen w-full bg-[#0e2246] text-[#F2F2F0] flex flex-col font-sans selection:bg-[#163A70] selection:text-white">
       <Header />
-      <main style={{ flexGrow: 1, padding: "2rem", paddingTop: "6rem", width: "100%", maxWidth: "1200px", margin: "0 auto", display: "flex", flexDirection: "column" }}>
-        
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Panel de Administración</h1>
-            <p className="text-gray-400 mt-1">Gestiona las cafeterías del campus</p>
+
+      {/* Notificación Toast */}
+      {notification && (
+        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-[110] animate-fade-in">
+          <div className={`flex items-center gap-3 px-5 py-3 rounded-full shadow-2xl backdrop-blur-md text-xs font-mono tracking-wider uppercase ${
+            notification.type === 'success' 
+              ? 'bg-[#071326]/95 border border-emerald-500/40 text-emerald-300' 
+              : 'bg-[#071326]/95 border border-rose-500/40 text-rose-300'
+          }`}>
+            {notification.type === 'success' ? <FiCheckCircle size={16} /> : <FiAlertCircle size={16} />}
+            <span>{notification.message}</span>
+            <button onClick={() => setNotification(null)} className="ml-3 text-neutral-400 hover:text-white cursor-pointer">
+              <FiX size={14} />
+            </button>
           </div>
-          <button onClick={() => setShowModal(true)} className="bg-yellow-500 text-[#141b2d] font-bold py-2 px-6 rounded-lg shadow-lg flex items-center gap-2 transition hover:-translate-y-1">
-            <FiPlus size={20} /> Nueva Cafetería
+        </div>
+      )}
+
+      {/* ConfirmModal para acciones destructivas */}
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        isDestructive={true}
+        confirmText="Eliminar"
+        onConfirm={confirmState.onConfirm}
+        onCancel={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
+      />
+      
+      <main className="flex-grow pt-28 pb-28 px-4 sm:px-8 lg:px-16 max-w-7xl mx-auto w-full">
+        {/* Encabezado Editorial */}
+        <PageHeader
+          eyebrow="Administración Universitaria"
+          title="Panel de Gestión"
+          description="Catálogo de establecimientos, administración de cartas de platillos y moderación de opiniones de la comunidad."
+        >
+          <button 
+            onClick={() => setShowModal(true)} 
+            className="px-6 py-2.5 bg-white text-black font-sans text-xs font-mono uppercase tracking-wider rounded-full hover:bg-neutral-200 transition-colors flex items-center gap-2 cursor-pointer font-medium"
+          >
+            <FiPlus size={15} /> 
+            <span>Nueva Cafetería</span>
           </button>
-        </div>
+        </PageHeader>
 
-        <div className="bg-[#1e2538] rounded-xl shadow-2xl border border-white/5 overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-[#2a324a] text-gray-300 uppercase text-sm font-semibold">
-              <tr><th className="px-6 py-4">Nombre</th><th className="px-6 py-4">Horario</th><th className="px-6 py-4 text-center">Acciones</th></tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {cafeterias.map((cafe) => (
-                <tr key={cafe.id_tiendita} className="hover:bg-white/5">
-                  <td className="px-6 py-4 font-medium">{cafe.nombre}</td>
-                  <td className="px-6 py-4 text-sm text-gray-300">{cafe.hora_apertura ? `${cafe.hora_apertura.slice(0,5)} - ${cafe.hora_cierre?.slice(0,5)}` : "-"}</td>
-                  <td className="px-6 py-4 flex justify-center gap-3">
-                    <button onClick={() => openEditModal(cafe)} className="p-2 bg-blue-600/20 text-blue-400 rounded hover:bg-blue-600 hover:text-white"><FiEdit2 /></button>
-                    <button onClick={() => handleDelete(cafe.id_tiendita)} className="p-2 bg-red-600/20 text-red-400 rounded hover:bg-red-600 hover:text-white"><FiTrash2 /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Tabla de Cafeterías */}
+        {loading ? (
+          <div className="py-20 text-center text-neutral-400 font-mono text-xs uppercase tracking-widest animate-pulse">
+            Sincronizando catálogo con el servidor...
+          </div>
+        ) : (
+          <div className="rounded-2xl bg-[#0a1830] border border-white/[0.08] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-[#071326] text-neutral-300 font-mono text-[11px] uppercase tracking-wider border-b border-white/[0.08]">
+                  <tr>
+                    <th className="px-6 py-4 font-medium">Establecimiento</th>
+                    <th className="px-6 py-4 font-medium">Horario Regular</th>
+                    <th className="px-6 py-4 font-medium text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.06] text-sm">
+                  {cafeterias.map((cafe) => (
+                    <tr key={cafe.id_tiendita} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-4 font-medium text-white">
+                        {cafe.nombre}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs text-neutral-300">
+                        {cafe.hora_apertura ? `${cafe.hora_apertura.slice(0, 5)} – ${cafe.hora_cierre?.slice(0, 5)}` : "Sin horario registrado"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button 
+                            onClick={() => openEditModal(cafe)} 
+                            className="p-2 text-neutral-300 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors cursor-pointer"
+                            title="Editar cafetería"
+                            aria-label={`Editar cafetería ${cafe.nombre}`}
+                          >
+                            <FiEdit2 size={15} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(cafe.id_tiendita, cafe.nombre)} 
+                            className="p-2 text-neutral-300 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                            title="Eliminar cafetería"
+                            aria-label={`Eliminar cafetería ${cafe.nombre}`}
+                          >
+                            <FiTrash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </main>
-      <Footer />
 
-      {/* MODAL CREAR */}
+      <Footer />
+      <ChatWidget />
+
+      {/* MODAL CREAR CAFETERÍA */}
       {showModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#1e2538] w-full max-w-md rounded-xl p-6 border border-white/10 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold mb-4">Nueva Cafetería</h3>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <input name="nombre" className="w-full p-2 bg-[#141b2d] border border-white/10 rounded text-white" placeholder="Nombre" onChange={handleChange} required />
-              <div className="grid grid-cols-2 gap-4">
-                <input type="time" name="hora_apertura" className="w-full p-2 bg-[#141b2d] border border-white/10 rounded text-white" onChange={handleChange} />
-                <input type="time" name="hora_cierre" className="w-full p-2 bg-[#141b2d] border border-white/10 rounded text-white" onChange={handleChange} />
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-create-title"
+        >
+          <div className="bg-[#0a1830] w-full max-w-lg rounded-2xl p-6 sm:p-8 border border-white/[0.12] shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4 mb-6">
+              <h3 id="modal-create-title" className="font-display text-2xl text-white font-normal">
+                Registrar Cafetería
+              </h3>
+              <button 
+                onClick={() => setShowModal(false)} 
+                className="text-neutral-400 hover:text-white p-1 cursor-pointer"
+                aria-label="Cerrar modal"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreate} className="space-y-4 text-sm font-sans">
+              <div>
+                <label htmlFor="new-cafe-nombre" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Nombre</label>
+                <input 
+                  id="new-cafe-nombre"
+                  name="nombre" 
+                  className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A]" 
+                  placeholder="Nombre de la cafetería" 
+                  onChange={handleChange} 
+                  required 
+                />
               </div>
+
               <div className="grid grid-cols-2 gap-4">
-                 <input type="number" step="any" placeholder="Latitud" name="latitud" className="w-full p-2 bg-[#141b2d] border border-white/10 rounded text-white" onChange={handleChange} />
-                 <input type="number" step="any" placeholder="Longitud" name="longitud" className="w-full p-2 bg-[#141b2d] border border-white/10 rounded text-white" onChange={handleChange} />
+                <div>
+                  <label htmlFor="new-cafe-apertura" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Apertura</label>
+                  <input 
+                    id="new-cafe-apertura"
+                    type="time" 
+                    name="hora_apertura" 
+                    className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A] font-mono" 
+                    onChange={handleChange} 
+                  />
+                </div>
+                <div>
+                  <label htmlFor="new-cafe-cierre" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Cierre</label>
+                  <input 
+                    id="new-cafe-cierre"
+                    type="time" 
+                    name="hora_cierre" 
+                    className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A] font-mono" 
+                    onChange={handleChange} 
+                  />
+                </div>
               </div>
-              <select name="id_facultad" className="w-full p-2 bg-[#141b2d] border border-white/10 rounded text-white" onChange={handleChange} required>
-                  <option value="">Facultad...</option>
-                  {facultades.map(f => <option key={f.id_facultad} value={f.id_facultad}>{f.nombre}</option>)}
-              </select>
-              <label className="cursor-pointer bg-blue-600/20 border border-blue-600 text-blue-400 px-4 py-2 rounded text-sm font-bold flex items-center gap-2 justify-center hover:bg-blue-600 hover:text-white transition">
-                   <FiImage /> Imagen (PC) <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, false)} />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="new-cafe-latitud" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Latitud</label>
+                  <input 
+                    id="new-cafe-latitud"
+                    type="number" 
+                    step="any" 
+                    placeholder="29.083..." 
+                    name="latitud" 
+                    className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A] font-mono text-xs" 
+                    onChange={handleChange} 
+                  />
+                </div>
+                <div>
+                  <label htmlFor="new-cafe-longitud" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Longitud</label>
+                  <input 
+                    id="new-cafe-longitud"
+                    type="number" 
+                    step="any" 
+                    placeholder="-110.961..." 
+                    name="longitud" 
+                    className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A] font-mono text-xs" 
+                    onChange={handleChange} 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="new-cafe-facultad" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Facultad</label>
+                <select 
+                  id="new-cafe-facultad"
+                  name="id_facultad" 
+                  className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A]" 
+                  onChange={handleChange} 
+                  required
+                >
+                  <option value="">Seleccionar facultad...</option>
+                  {facultades.map((f) => <option key={f.id_facultad} value={f.id_facultad}>{f.nombre}</option>)}
+                </select>
+              </div>
+
+              <label className="cursor-pointer bg-white/[0.04] border border-white/[0.1] text-neutral-300 px-4 py-3 rounded-xl text-xs font-mono uppercase tracking-wider flex items-center gap-2 justify-center hover:bg-white/[0.08] transition">
+                <FiImage size={15} /> 
+                <span>Imagen de portada</span>
+                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, false)} />
               </label>
-              <div className="flex justify-end gap-2 pt-2">
-                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-300">Cancelar</button>
-                 <button type="submit" className="px-4 py-2 bg-yellow-500 text-[#141b2d] font-bold rounded">Crear</button>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-white/[0.08]">
+                <button 
+                  type="button" 
+                  onClick={() => setShowModal(false)} 
+                  className="px-5 py-2 text-xs font-mono uppercase tracking-wider text-neutral-400 hover:text-white cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-6 py-2.5 bg-white text-black font-sans text-xs font-mono uppercase tracking-wider rounded-full hover:bg-neutral-200 transition-colors cursor-pointer font-medium"
+                >
+                  Guardar
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL EDITAR (Con Tabs) */}
+      {/* MODAL EDITAR CAFETERÍA (CON TABS) */}
       {showEditModal && editingCafe && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#1e2538] w-full max-w-2xl h-[85vh] rounded-xl border border-white/10 flex flex-col">
-            <div className="flex justify-between p-4 border-b border-white/10 bg-[#2a324a]">
-              <h3 className="font-bold">Editar: {editingCafe.nombre}</h3>
-              <button onClick={() => setShowEditModal(false)}><FiX /></button>
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-edit-title"
+        >
+          <div className="bg-[#0a1830] w-full max-w-2xl h-[85vh] rounded-2xl border border-white/[0.12] shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center p-5 border-b border-white/[0.08] bg-[#071326]">
+              <h3 id="modal-edit-title" className="font-display text-2xl text-white font-normal">
+                Editar: {editingCafe.nombre}
+              </h3>
+              <button 
+                onClick={() => setShowEditModal(false)} 
+                className="text-neutral-400 hover:text-white p-1 cursor-pointer"
+                aria-label="Cerrar ventana de edición"
+              >
+                <FiX size={18} />
+              </button>
             </div>
             
             {/* TABS DE NAVEGACIÓN */}
-            <div className="flex border-b border-white/10">
-               <button onClick={() => setActiveTab("info")} className={`flex-1 py-3 font-medium transition-colors ${activeTab==="info" ? "text-yellow-500 border-b-2 border-yellow-500 bg-white/5" : "text-gray-400 hover:text-white"}`}>Info General</button>
-               <button onClick={() => setActiveTab("menu")} className={`flex-1 py-3 font-medium transition-colors ${activeTab==="menu" ? "text-yellow-500 border-b-2 border-yellow-500 bg-white/5" : "text-gray-400 hover:text-white"}`}>Menú</button>
-               <button onClick={() => setActiveTab("reviews")} className={`flex-1 py-3 font-medium transition-colors ${activeTab==="reviews" ? "text-yellow-500 border-b-2 border-yellow-500 bg-white/5" : "text-gray-400 hover:text-white"}`}>Reseñas ({cafeReviews.length})</button>
+            <div className="flex border-b border-white/[0.08] bg-[#071326] px-5 gap-6 text-xs font-mono uppercase tracking-wider" role="tablist">
+              <button 
+                role="tab"
+                aria-selected={activeTab === "info"}
+                onClick={() => setActiveTab("info")} 
+                className={`py-3.5 border-b-2 transition-colors cursor-pointer ${
+                  activeTab === "info" ? "text-white border-[#B39A3A] font-semibold" : "text-neutral-400 border-transparent hover:text-white"
+                }`}
+              >
+                Información
+              </button>
+              <button 
+                role="tab"
+                aria-selected={activeTab === "menu"}
+                onClick={() => setActiveTab("menu")} 
+                className={`py-3.5 border-b-2 transition-colors cursor-pointer ${
+                  activeTab === "menu" ? "text-white border-[#B39A3A] font-semibold" : "text-neutral-400 border-transparent hover:text-white"
+                }`}
+              >
+                Menú ({cafeMenu.length})
+              </button>
+              <button 
+                role="tab"
+                aria-selected={activeTab === "reviews"}
+                onClick={() => setActiveTab("reviews")} 
+                className={`py-3.5 border-b-2 transition-colors cursor-pointer ${
+                  activeTab === "reviews" ? "text-white border-[#B39A3A] font-semibold" : "text-neutral-400 border-transparent hover:text-white"
+                }`}
+              >
+                Reseñas ({cafeReviews.length})
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
-              
-              {/* --- TAB 1: INFO --- */}
+              {/* --- TAB 1: INFORMACIÓN GENERAL --- */}
               {activeTab === "info" && (
-                <form onSubmit={handleUpdateCafe} className="space-y-4">
-                   <input className="w-full p-3 bg-[#141b2d] border border-white/10 rounded text-white" value={editingCafe.nombre} onChange={e => setEditingCafe({...editingCafe, nombre: e.target.value})} />
-                   <input className="w-full p-3 bg-[#141b2d] border border-white/10 rounded text-white" value={editingCafe.direccion || ""} placeholder="Dirección" onChange={e => setEditingCafe({...editingCafe, direccion: e.target.value})} />
-                   <div className="grid grid-cols-2 gap-4">
-                      <input type="time" className="w-full p-3 bg-[#141b2d] border border-white/10 rounded text-white" value={editingCafe.hora_apertura || ""} onChange={e => setEditingCafe({...editingCafe, hora_apertura: e.target.value})} />
-                      <input type="time" className="w-full p-3 bg-[#141b2d] border border-white/10 rounded text-white" value={editingCafe.hora_cierre || ""} onChange={e => setEditingCafe({...editingCafe, hora_cierre: e.target.value})} />
-                   </div>
-                   <div className="grid grid-cols-2 gap-4">
-                      <input type="number" step="any" className="w-full p-3 bg-[#141b2d] border border-white/10 rounded text-white" value={editingCafe.latitud || ""} onChange={e => setEditingCafe({...editingCafe, latitud: e.target.value})} />
-                      <input type="number" step="any" className="w-full p-3 bg-[#141b2d] border border-white/10 rounded text-white" value={editingCafe.longitud || ""} onChange={e => setEditingCafe({...editingCafe, longitud: e.target.value})} />
-                   </div>
-                   <label className="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 justify-center transition">
-                       <FiImage /> Cambiar Foto <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, true)} />
-                   </label>
-                   <button type="submit" className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded flex justify-center gap-2"><FiSave /> Guardar Cambios</button>
+                <form onSubmit={handleUpdateCafe} className="space-y-4 font-sans text-sm">
+                  <div>
+                    <label htmlFor="edit-cafe-nombre" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Nombre</label>
+                    <input 
+                      id="edit-cafe-nombre"
+                      className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A]" 
+                      value={editingCafe.nombre} 
+                      onChange={(e) => setEditingCafe({ ...editingCafe, nombre: e.target.value })} 
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="edit-cafe-direccion" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Dirección / Ubicación</label>
+                    <input 
+                      id="edit-cafe-direccion"
+                      className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A]" 
+                      value={editingCafe.direccion || ""} 
+                      placeholder="Ubicación o edificio del campus" 
+                      onChange={(e) => setEditingCafe({ ...editingCafe, direccion: e.target.value })} 
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="edit-cafe-apertura" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Apertura</label>
+                      <input 
+                        id="edit-cafe-apertura"
+                        type="time" 
+                        className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A] font-mono" 
+                        value={editingCafe.hora_apertura || ""} 
+                        onChange={(e) => setEditingCafe({ ...editingCafe, hora_apertura: e.target.value })} 
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-cafe-cierre" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Cierre</label>
+                      <input 
+                        id="edit-cafe-cierre"
+                        type="time" 
+                        className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A] font-mono" 
+                        value={editingCafe.hora_cierre || ""} 
+                        onChange={(e) => setEditingCafe({ ...editingCafe, hora_cierre: e.target.value })} 
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="edit-cafe-latitud" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Latitud</label>
+                      <input 
+                        id="edit-cafe-latitud"
+                        type="number" 
+                        step="any" 
+                        className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A] font-mono text-xs" 
+                        value={editingCafe.latitud || ""} 
+                        onChange={(e) => setEditingCafe({ ...editingCafe, latitud: e.target.value })} 
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-cafe-longitud" className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1 font-medium">Longitud</label>
+                      <input 
+                        id="edit-cafe-longitud"
+                        type="number" 
+                        step="any" 
+                        className="w-full p-3 bg-[#071326] border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#B39A3A] font-mono text-xs" 
+                        value={editingCafe.longitud || ""} 
+                        onChange={(e) => setEditingCafe({ ...editingCafe, longitud: e.target.value })} 
+                      />
+                    </div>
+                  </div>
+                  <label className="cursor-pointer bg-white/[0.04] border border-white/[0.1] text-neutral-300 px-4 py-3 rounded-xl text-xs font-mono uppercase tracking-wider flex items-center gap-2 justify-center hover:bg-white/[0.08] transition">
+                    <FiImage size={15} /> 
+                    <span>Actualizar Fotografía</span>
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, true)} />
+                  </label>
+                  <button 
+                    type="submit" 
+                    className="w-full py-3 bg-white text-black font-sans text-xs font-mono uppercase tracking-wider rounded-full hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2 cursor-pointer mt-2 font-medium"
+                  >
+                    <FiSave size={14} /> 
+                    <span>Guardar Cambios</span>
+                  </button>
                 </form>
               )}
 
-              {/* --- TAB 2: MENÚ --- */}
+              {/* --- TAB 2: MENÚ DEL DÍA --- */}
               {activeTab === "menu" && (
-                <div className="space-y-4">
-                   <div className="bg-[#2a324a] p-4 rounded border border-white/10">
-                      <h4 className={`font-bold mb-2 flex items-center gap-2 ${editingMenuItemId ? "text-blue-400" : "text-yellow-500"}`}>
-                          {editingMenuItemId ? <><FiEdit2/> Editando Platillo</> : <><FiPlus/> Nuevo Platillo</>}
-                      </h4>
-                      <div className="grid grid-cols-3 gap-2 mb-2">
-                         <input className="col-span-2 p-2 bg-[#1e2538] border border-white/10 rounded text-white text-sm" placeholder="Nombre" value={newMenuItem.nombre} onChange={e => setNewMenuItem({...newMenuItem, nombre: e.target.value})} />
-                         <input className="col-span-1 p-2 bg-[#1e2538] border border-white/10 rounded text-white text-sm" type="number" placeholder="$" value={newMenuItem.precio} onChange={e => setNewMenuItem({...newMenuItem, precio: e.target.value})} />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 mb-2">
-                          <select className="p-2 bg-[#1e2538] border border-white/10 rounded text-white text-sm" value={newMenuItem.categoria} onChange={e => setNewMenuItem({...newMenuItem, categoria: e.target.value})}>
-                              <option value="">Categoría...</option>
-                              {categoriasComida.map(c => <option key={c} value={c}>{c}</option>)}
-                          </select>
-                          <input className="p-2 bg-[#1e2538] border border-white/10 rounded text-white text-sm" placeholder="Descripción" value={newMenuItem.descripcion} onChange={e => setNewMenuItem({...newMenuItem, descripcion: e.target.value})} />
-                      </div>
-                      <div className="flex gap-2">
-                        {editingMenuItemId && (
-                            <button onClick={cancelEditMenuItem} className="w-1/3 py-1 bg-gray-600 hover:bg-gray-500 text-white text-sm font-bold rounded">Cancelar</button>
-                        )}
-                        <button onClick={handleSaveMenuItem} className={`flex-1 py-1 font-bold rounded text-white text-sm ${editingMenuItemId ? "bg-blue-600 hover:bg-blue-500" : "bg-green-600 hover:bg-green-500"}`}>
-                            {editingMenuItemId ? "Actualizar" : "Agregar"}
+                <div className="space-y-6">
+                  <div className="bg-[#071326] p-5 rounded-2xl border border-white/[0.08]">
+                    <span className="font-mono text-xs uppercase tracking-wider text-[#B39A3A] block mb-3 font-medium">
+                      {editingMenuItemId ? "Editar Platillo" : "Agregar Platillo a la Carta"}
+                    </span>
+                    <div className="grid grid-cols-3 gap-3 mb-3">
+                      <input 
+                        className="col-span-2 p-2.5 bg-[#0a1830] border border-white/[0.1] rounded-xl text-white text-xs focus:outline-none focus:border-[#B39A3A]" 
+                        placeholder="Nombre del platillo" 
+                        value={newMenuItem.nombre} 
+                        onChange={(e) => setNewMenuItem({ ...newMenuItem, nombre: e.target.value })} 
+                      />
+                      <input 
+                        className="col-span-1 p-2.5 bg-[#0a1830] border border-white/[0.1] rounded-xl text-white text-xs font-mono focus:outline-none focus:border-[#B39A3A]" 
+                        type="number" 
+                        placeholder="Precio ($)" 
+                        value={newMenuItem.precio} 
+                        onChange={(e) => setNewMenuItem({ ...newMenuItem, precio: e.target.value })} 
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <select 
+                        className="p-2.5 bg-[#0a1830] border border-white/[0.1] rounded-xl text-white text-xs focus:outline-none focus:border-[#B39A3A]" 
+                        value={newMenuItem.categoria} 
+                        onChange={(e) => setNewMenuItem({ ...newMenuItem, categoria: e.target.value })}
+                      >
+                        <option value="">Categoría...</option>
+                        {categoriasComida.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      <input 
+                        className="p-2.5 bg-[#0a1830] border border-white/[0.1] rounded-xl text-white text-xs focus:outline-none focus:border-[#B39A3A]" 
+                        placeholder="Descripción breve" 
+                        value={newMenuItem.descripcion} 
+                        onChange={(e) => setNewMenuItem({ ...newMenuItem, descripcion: e.target.value })} 
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-end pt-1">
+                      {editingMenuItemId && (
+                        <button 
+                          onClick={cancelEditMenuItem} 
+                          className="px-4 py-1.5 text-xs font-mono uppercase tracking-wider text-neutral-400 hover:text-white cursor-pointer"
+                        >
+                          Cancelar
                         </button>
-                      </div>
-                   </div>
+                      )}
+                      <button 
+                        onClick={handleSaveMenuItem} 
+                        className="px-5 py-1.5 bg-white text-black font-sans text-xs font-mono uppercase tracking-wider rounded-full hover:bg-neutral-200 transition-colors cursor-pointer font-medium"
+                      >
+                        {editingMenuItemId ? "Actualizar" : "Guardar Platillo"}
+                      </button>
+                    </div>
+                  </div>
 
-                   <div>
-                      <h4 className="text-white font-bold mb-3 flex items-center gap-2"><FiList/> Menú Actual</h4>
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                          {cafeMenu.length === 0 && <p className="text-gray-500 text-center text-sm py-4">Menú vacío.</p>}
-                          {cafeMenu.map(item => (
-                              <div key={item.id_menu} className="flex justify-between items-center bg-[#141b2d] p-3 rounded border border-white/5 hover:border-white/20 transition group">
-                                  <div>
-                                      <p className="font-bold text-white text-sm">{item.nombre}</p>
-                                      <p className="text-xs text-gray-400">{item.categoria} • {item.descripcion}</p> 
-                                      <p className="text-xs text-green-400 font-mono">${parseFloat(item.precio).toFixed(2)}</p>
-                                  </div>
-                                  <div className="flex gap-2">
-                                      <button onClick={() => startEditMenuItem(item)} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded transition"><FiEdit2 /></button>
-                                      <button onClick={() => handleDeleteMenuItem(item.id_menu)} className="p-2 text-red-400 hover:bg-red-500/10 rounded transition"><FiTrash2 /></button>
-                                  </div>
-                              </div>
-                          ))}
-                      </div>
-                   </div>
+                  <div>
+                    <h4 className="font-display text-xl text-white mb-3 flex items-center gap-2 font-normal">
+                      <FiList size={16} className="text-[#B39A3A]" /> 
+                      <span>Carta Actual ({cafeMenu.length})</span>
+                    </h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1 divide-y divide-white/[0.04]">
+                      {cafeMenu.length === 0 && (
+                        <p className="text-neutral-400 text-center text-xs py-6 font-light">
+                          No hay platillos registrados en este menú.
+                        </p>
+                      )}
+                      {cafeMenu.map((item) => (
+                        <div key={item.id_menu} className="pt-2.5 pb-2.5 flex justify-between items-center group">
+                          <div>
+                            <p className="font-medium text-white text-sm">{item.nombre}</p>
+                            <p className="text-xs text-neutral-400 font-light">{item.categoria} {item.descripcion ? `· ${item.descripcion}` : ""}</p> 
+                            <p className="text-xs text-[#B39A3A] font-mono mt-0.5">${parseFloat(item.precio).toFixed(2)}</p>
+                          </div>
+                          <div className="flex gap-1">
+                            <button 
+                              onClick={() => startEditMenuItem(item)} 
+                              className="p-1.5 text-neutral-400 hover:text-white rounded transition cursor-pointer"
+                              title="Editar platillo"
+                            >
+                              <FiEdit2 size={14} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteMenuItem(item.id_menu)} 
+                              className="p-1.5 text-neutral-400 hover:text-rose-400 rounded transition cursor-pointer"
+                              title="Eliminar platillo"
+                            >
+                              <FiTrash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* --- TAB 3: RESEÑAS --- */}
+              {/* --- TAB 3: RESEÑAS Y MODERACIÓN --- */}
               {activeTab === "reviews" && (
-                  <div className="space-y-4">
-                      <div className="flex justify-between items-center mb-4">
-                          <h4 className="text-white font-bold flex items-center gap-2">
-                              <FiMessageSquare className="text-yellow-500"/> Comentarios de Usuarios
-                          </h4>
-                          <span className="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded">Total: {cafeReviews.length}</span>
-                      </div>
-
-                      {cafeReviews.length === 0 ? (
-                          <div className="text-center py-10 bg-[#141b2d] rounded border border-white/5">
-                              <p className="text-gray-500">No hay reseñas para esta cafetería aún.</p>
-                          </div>
-                      ) : (
-                          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                              {cafeReviews.map((review) => (
-                                  <div key={review.id_resena} className="bg-[#141b2d] p-4 rounded border-l-4 border-yellow-500 hover:bg-[#1a2236] transition flex justify-between gap-4">
-                                      <div className="flex-1">
-                                          <div className="flex items-center gap-2 mb-1">
-                                              <div className="flex items-center gap-1 text-sm font-bold text-gray-200">
-                                                  <FiUser className="text-blue-400"/> {review.nombre_usuario || "Anónimo"}
-                                              </div>
-                                              <span className="text-xs text-gray-500">• {new Date(review.fecha_registro).toLocaleDateString()}</span>
-                                          </div>
-                                          <div className="flex mb-2">
-                                              {[...Array(5)].map((_, i) => (
-                                                  <FaStar key={i} size={12} className={i < review.calificacion ? "text-yellow-500" : "text-gray-700"} />
-                                              ))}
-                                          </div>
-                                          <p className="text-sm text-gray-300 italic">"{review.comentario}"</p>
-                                      </div>
-                                      <div className="flex items-center">
-                                          <button 
-                                              onClick={() => handleDeleteReview(review.id_resena)}
-                                              className="p-2 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded transition"
-                                              title="Eliminar comentario"
-                                          >
-                                              <FiTrash2 size={18} />
-                                          </button>
-                                      </div>
-                                  </div>
-                              ))}
-                          </div>
-                      )}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-display text-xl text-white flex items-center gap-2 font-normal">
+                      <FiMessageSquare size={16} className="text-[#B39A3A]" /> 
+                      <span>Moderación de Opiniones</span>
+                    </h4>
+                    <span className="font-mono text-xs text-neutral-400">Total: {cafeReviews.length}</span>
                   </div>
+
+                  {cafeReviews.length === 0 ? (
+                    <div className="text-center py-10 text-neutral-400 text-xs font-light">
+                      No hay reseñas registradas para este establecimiento.
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-2 divide-y divide-white/[0.04]">
+                      {cafeReviews.map((review) => (
+                        <div key={review.id_resena} className="pt-3 pb-3 flex justify-between items-start gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-sans font-medium text-xs text-white flex items-center gap-1.5">
+                                <FiUser size={12} className="text-neutral-400" />
+                                {review.nombre_usuario || "Anónimo"}
+                              </span>
+                              <span className="text-[10px] font-mono text-neutral-500">· {new Date(review.fecha_registro).toLocaleDateString()}</span>
+                            </div>
+                            <div className="flex text-[#B39A3A] text-xs mb-1.5">
+                              {[...Array(5)].map((_, i) => (
+                                <FaStar key={i} size={10} className={i < review.calificacion ? "" : "text-neutral-700"} />
+                              ))}
+                            </div>
+                            <p className="text-xs text-neutral-300 font-light leading-relaxed">"{review.comentario}"</p>
+                          </div>
+                          <button 
+                            onClick={() => handleDeleteReview(review.id_resena)}
+                            className="p-1.5 text-neutral-400 hover:text-rose-400 rounded transition cursor-pointer"
+                            title="Eliminar comentario"
+                          >
+                            <FiTrash2 size={15} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
 
             </div>

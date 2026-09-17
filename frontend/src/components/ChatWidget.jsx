@@ -1,224 +1,327 @@
+// src/components/ChatWidget.jsx
 import React, { useState, useRef, useEffect } from "react";
-import { FiMessageSquare, FiX, FiSend, FiLoader } from "react-icons/fi";
+import { FiX, FiSend, FiLoader, FiHelpCircle } from "react-icons/fi";
 import logo from "../assets/logo.png";
 
 const ChatWidget = () => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [message, setMessage] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-    const [chatHistory, setChatHistory] = useState([
-        {
-            type: "bot",
-            text: "¡Hola! Soy el Buhito 🦉. ¿Qué se te antoja hoy? Puedo ayudarte a encontrar comida en el campus."
-        }
-    ]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState([
+    {
+      type: "bot",
+      text: "Hola. Soy el asistente de Hungry Owl. ¿Qué platillo, cafetería o presupuesto buscas hoy en el campus universitario?"
+    }
+  ]);
 
-    const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const drawerRef = useRef(null);
 
-    const toggleChat = () => setIsOpen(!isOpen);
+  // Sugerencias rápidas para estudiantes
+  const quickPrompts = [
+    "¿Qué cafeterías están abiertas ahora?",
+    "Comidas por menos de $50 pesos",
+    "¿Dónde comer cerca de Medicina?",
+    "¿Hay desayunos o comida corrida?"
+  ];
 
-    // El backend es stateless: reenviamos los últimos turnos como pares
-    // [pregunta, respuesta] para que el RAG pueda reformular preguntas de
-    // seguimiento sin guardar historial compartido entre usuarios.
-    const buildHistoryPairs = (history) => {
-        const pairs = [];
-        for (let i = 0; i < history.length - 1; i++) {
-            if (history[i].type === "user" && history[i + 1].type === "bot") {
-                pairs.push([history[i].text, history[i + 1].text]);
-            }
-        }
-        return pairs.slice(-6);
+  useEffect(() => {
+    const handleToggle = () => setIsOpen((prev) => !prev);
+    const handleOpen = () => setIsOpen(true);
+    const handleClose = () => setIsOpen(false);
+
+    window.addEventListener("toggle-assistant", handleToggle);
+    window.addEventListener("open-assistant", handleOpen);
+    window.addEventListener("close-assistant", handleClose);
+
+    return () => {
+      window.removeEventListener("toggle-assistant", handleToggle);
+      window.removeEventListener("open-assistant", handleOpen);
+      window.removeEventListener("close-assistant", handleClose);
     };
+  }, []);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [chatHistory]);
-
-    // Obtener ubicación del usuario (opcional)
-    const getUserLocation = () => {
-        return new Promise((resolve) => {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        resolve({
-                            lat: position.coords.latitude,
-                            lon: position.coords.longitude
-                        });
-                    },
-                    () => resolve(null) // Si falla, enviar sin ubicación
-                );
-            } else {
-                resolve(null);
-            }
-        });
-    };
-
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!message.trim() || isLoading) return;
-
-        const userMessage = message.trim();
-        const newHistory = [...chatHistory, { type: "user", text: userMessage }];
-        setChatHistory(newHistory);
-        setMessage("");
-        setIsLoading(true);
-
-        try {
-            // Obtener ubicación (opcional)
-            const location = await getUserLocation();
-
-            // Llamar al backend
-            const response = await fetch("http://127.0.0.1:8000/api/chatbot/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    message: userMessage,
-                    lat: location?.lat,
-                    lon: location?.lon,
-                    history: buildHistoryPairs(chatHistory)
-                }),
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                let formattedAnswer = data.answer;
-
-                // Caso 1: Si JSON escapó los \n como \\n literales (texto)
-                if (formattedAnswer.includes('\\n')) {
-                    formattedAnswer = formattedAnswer.replace(/\\n/g, '\n');
-                }
-
-                // Caso 2: Si tiene bullets pero SIN saltos de línea, forzarlos
-                if (formattedAnswer.includes('•') && !formattedAnswer.includes('\n•')) {
-                    formattedAnswer = formattedAnswer
-                        .split('•')
-                        .map((part, i) => i === 0 ? part : '• ' + part.trim())
-                        .join('\n')
-                        .trim();
-                }
-
-                setChatHistory((prev) => [
-                    ...prev,
-                    { type: "bot", text: formattedAnswer }
-                ]);
-            } else {
-                throw new Error(data.error || "Error desconocido");
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            setChatHistory((prev) => [
-                ...prev,
-                {
-                    type: "bot",
-                    text: "😔 Lo siento, hubo un problema. ¿Puedes intentar de nuevo?"
-                }
-            ]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-
-            {/* VENTANA DE CHAT */}
-            {isOpen && (
-                <div className="mb-4 w-80 sm:w-96 h-[500px] bg-[#1e2538] rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden animate-fade-in-up">
-                    {/* Header */}
-                    <div className="bg-[#141b2d] p-4 flex items-center justify-between border-b border-white/5">
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <img src={logo} alt="Buhito" className="w-10 h-10 rounded-full bg-yellow-500/10 p-1" />
-                                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#141b2d] rounded-full"></span>
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-white text-sm">El Buhito</h3>
-                                <p className="text-xs text-green-400">En línea</p>
-                            </div>
-                        </div>
-                        <button onClick={toggleChat} className="text-gray-400 hover:text-white transition-colors">
-                            <FiX size={20} />
-                        </button>
-                    </div>
-
-                    {/* Mensajes */}
-                    <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-[#1e2538]">
-                        {chatHistory.map((msg, index) => (
-                            <div key={index} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
-                                <div
-                                    className={`max-w-[80%] p-3 rounded-2xl text-sm whitespace-pre-line ${
-                                        msg.type === "user"
-                                            ? "bg-yellow-500 text-[#141b2d] rounded-br-none font-medium"
-                                            : "bg-[#2a324a] text-gray-200 rounded-bl-none border border-white/5 leading-relaxed"
-                                    }`}
-                                    style={msg.type === "bot" ? { textIndent: "-1em", paddingLeft: "1em" } : {}}
-                                >
-                                    {msg.text}
-                                </div>
-                            </div>
-                        ))}
-
-                        {/* Indicador de carga */}
-                        {isLoading && (
-                            <div className="flex justify-start">
-                                <div className="bg-[#2a324a] text-gray-200 p-3 rounded-2xl rounded-bl-none border border-white/5 flex items-center gap-2">
-                                    <FiLoader className="animate-spin" />
-                                    <span className="text-sm">Pensando...</span>
-                                </div>
-                            </div>
-                        )}
-
-                        <div ref={messagesEndRef} />
-                    </div>
-
-                    {/* Input */}
-                    <form onSubmit={handleSendMessage} className="p-3 bg-[#141b2d] border-t border-white/5 flex gap-2">
-                        <input
-                            type="text"
-                            placeholder="Escribe tu mensaje..."
-                            className="flex-1 bg-[#1e2538] text-white text-sm rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 border border-white/5 placeholder-gray-500"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            disabled={isLoading}
-                        />
-                        <button
-                            type="submit"
-                            className="bg-yellow-500 text-[#141b2d] p-2.5 rounded-full hover:bg-yellow-400 transition-colors flex items-center justify-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={!message.trim() || isLoading}
-                        >
-                            <FiSend size={18} />
-                        </button>
-                    </form>
-                </div>
-            )}
-
-            {/* BOTÓN FLOTANTE */}
-            <button
-                onClick={toggleChat}
-                className={`
-          group flex items-center justify-center shadow-[0_4px_20px_rgba(234,179,8,0.4)] transition-all duration-300 focus:outline-none z-50
-          bg-yellow-500 hover:bg-yellow-400 text-[#141b2d] rounded-full
-          ${isOpen ? "w-14 h-14" : "h-14 px-6 gap-3 hover:scale-105"} 
-        `}
-            >
-                {isOpen ? (
-                    <FiX size={28} className="transition-transform duration-300 rotate-90" />
-                ) : (
-                    <>
-                        <FiMessageSquare size={24} className="transition-transform duration-300" />
-                        <span className="font-bold text-base whitespace-nowrap">Chatea con buhito</span>
-                    </>
-                )}
-            </button>
-        </div>
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("assistant-state-changed", { detail: { isOpen } })
     );
+
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 150);
+    }
+  }, [isOpen]);
+
+  // Manejo de tecla Escape y Focus Trap
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isOpen) return;
+
+      if (e.key === "Escape") {
+        setIsOpen(false);
+        return;
+      }
+
+      if (e.key === "Tab" && drawerRef.current) {
+        const focusableElements = drawerRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  const buildHistoryPairs = (history) => {
+    const pairs = [];
+    for (let i = 0; i < history.length - 1; i++) {
+      if (history[i].type === "user" && history[i + 1].type === "bot") {
+        pairs.push([history[i].text, history[i + 1].text]);
+      }
+    }
+    return pairs.slice(-6);
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatHistory]);
+
+  const getUserLocation = () => {
+    return new Promise((resolve) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              lat: position.coords.latitude,
+              lon: position.coords.longitude
+            });
+          },
+          () => resolve(null)
+        );
+      } else {
+        resolve(null);
+      }
+    });
+  };
+
+  const handleSendMessage = async (userText) => {
+    const textToSend = (typeof userText === "string" ? userText : message).trim();
+    if (!textToSend || isLoading) return;
+
+    const newHistory = [...chatHistory, { type: "user", text: textToSend }];
+    setChatHistory(newHistory);
+    setMessage("");
+    setIsLoading(true);
+
+    try {
+      const location = await getUserLocation();
+
+      const response = await fetch("http://127.0.0.1:8000/api/chatbot/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: textToSend,
+          lat: location?.lat,
+          lon: location?.lon,
+          history: buildHistoryPairs(chatHistory)
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        let formattedAnswer = data.answer;
+
+        if (formattedAnswer.includes('\\n')) {
+          formattedAnswer = formattedAnswer.replace(/\\n/g, '\n');
+        }
+
+        if (formattedAnswer.includes('•') && !formattedAnswer.includes('\n•')) {
+          formattedAnswer = formattedAnswer
+            .split('•')
+            .map((part, i) => i === 0 ? part : '• ' + part.trim())
+            .join('\n')
+            .trim();
+        }
+
+        setChatHistory((prev) => [
+          ...prev,
+          { type: "bot", text: formattedAnswer }
+        ]);
+      } else {
+        throw new Error(data.error || "Error desconocido");
+      }
+    } catch (error) {
+      console.error("Error al comunicarse con el asistente:", error);
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          type: "bot",
+          text: "No fue posible conectar con el servidor RAG en este momento. Por favor intenta de nuevo en unos minutos."
+        }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      {/* Telón de fondo (backdrop) */}
+      <div
+        className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-50 transition-opacity duration-300 ease-in-out ${
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setIsOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Panel lateral drawer (420px) desplegable desde la izquierda */}
+      <aside
+        ref={drawerRef}
+        className={`fixed top-0 bottom-0 left-0 z-50 w-full sm:w-[420px] max-w-[92vw] h-full bg-[#071326] border-r border-white/10 shadow-[20px_0_50px_rgba(0,0,0,0.85)] flex flex-col font-sans transition-transform duration-300 ease-out transform ${
+          isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
+        }`}
+        aria-label="Asistente inteligente de campus Hungry Owl"
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Cabecera Editorial del Panel */}
+        <div className="bg-[#071326] px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between border-b border-white/[0.08]">
+          <div className="flex items-center gap-3">
+            <img
+              src={logo}
+              alt=""
+              className="w-7 h-7 object-contain filter grayscale invert contrast-125 brightness-110 opacity-90"
+            />
+            <div>
+              <h3 className="font-display text-lg font-normal text-white leading-none">
+                Asistente Hungry Owl
+              </h3>
+              <span className="font-mono text-[10px] text-emerald-400 uppercase tracking-[0.18em] block mt-1">
+                En servicio · RAG Campus UNISON
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="text-neutral-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5 cursor-pointer"
+            aria-label="Cerrar asistente"
+          >
+            <FiX size={18} />
+          </button>
+        </div>
+
+        {/* Historial de Mensajes */}
+        <div
+          className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-3.5 bg-[#0a1830]"
+          aria-live="polite"
+        >
+          {chatHistory.map((msg, index) => (
+            <div
+              key={index}
+              className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[85%] p-3.5 text-xs leading-relaxed ${
+                  msg.type === "user"
+                    ? "bg-[#163A70] text-white rounded-2xl rounded-br-sm font-normal border border-[#204a8e]/40 shadow-md"
+                    : "bg-[#071326] text-neutral-200 border border-white/[0.08] rounded-2xl rounded-bl-sm font-light whitespace-pre-line shadow-sm"
+                }`}
+              >
+                {msg.text}
+              </div>
+            </div>
+          ))}
+
+          {/* Sugerencias Rápidas para el estudiante si solo está el saludo inicial */}
+          {chatHistory.length === 1 && !isLoading && (
+            <div className="pt-2 space-y-2">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block px-1 flex items-center gap-1.5">
+                <FiHelpCircle size={11} className="text-[#B39A3A]" />
+                <span>Consultas frecuentes</span>
+              </span>
+              <div className="flex flex-col gap-1.5">
+                {quickPrompts.map((prompt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSendMessage(prompt)}
+                    className="text-left p-2.5 rounded-xl bg-[#071326]/70 hover:bg-[#071326] border border-white/[0.08] hover:border-[#B39A3A]/40 text-xs text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Indicador de Carga */}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-[#071326] text-neutral-300 text-xs px-4 py-2.5 rounded-2xl rounded-bl-sm border border-white/[0.08] flex items-center gap-2.5 font-mono">
+                <FiLoader className="animate-spin text-[#B39A3A]" size={14} />
+                <span>Consultando cafeterías del campus...</span>
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Formulario de Entrada */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSendMessage();
+          }}
+          className="p-3.5 sm:p-4 bg-[#071326] border-t border-white/[0.08] flex gap-2.5 items-center"
+        >
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Pregunta por platillos, presupuestos o tienditas..."
+            className="flex-1 bg-[#0a1830] text-white text-xs rounded-full px-4 py-2.5 border border-white/[0.1] focus:border-[#B39A3A]/60 focus:outline-none placeholder:text-neutral-400 font-sans"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            disabled={isLoading}
+            aria-label="Mensaje para el asistente"
+          />
+          <button
+            type="submit"
+            disabled={!message.trim() || isLoading}
+            className="w-9 h-9 rounded-full bg-white text-black hover:bg-neutral-200 transition-colors flex items-center justify-center disabled:opacity-40 cursor-pointer flex-shrink-0"
+            aria-label="Enviar pregunta"
+          >
+            <FiSend size={13} />
+          </button>
+        </form>
+      </aside>
+    </>
+  );
 };
 
 export default ChatWidget;

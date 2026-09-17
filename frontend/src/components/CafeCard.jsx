@@ -1,69 +1,116 @@
-// src/components/CafeCard.jsx
+// frontend/src/components/CafeCard.jsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { FiArrowRight, FiCheck, FiSearch } from "react-icons/fi";
+import defaultImage from "../assets/logo.png";
 
-const CafeCard = ({ name, image, path, searchTerm, cafeteriaMenus }) => {
-  const navigate = useNavigate();
-
-  // Lógica para encontrar coincidencias de productos
-  // Solo se ejecuta si hay algo escrito en el buscador y recibimos menús
-  const matches = (searchTerm && cafeteriaMenus)
-    ? cafeteriaMenus.filter(m => 
-        m.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : [];
+/**
+ * CafeCard — Tarjeta canónica en formato vertical 3:4 con foto a sangre
+ * e indicadores integrados tipográficamente (Identidad V2).
+ * 
+ * Totalmente accesible vía teclado (Link semántico).
+ */
+const CafeCard = ({
+  cafe,
+  index = 0,
+  isOpen = true,
+  isVisited = false,
+  facultadNombre = "",
+  imageSrc,
+  matchedDishes = []
+}) => {
+  const finalImage = imageSrc || cafe?.imagen_url || defaultImage;
+  const path = `/cafeterias/${cafe.id_tiendita}`;
+  
+  const horario = cafe.hora_apertura && cafe.hora_cierre
+    ? `${cafe.hora_apertura.slice(0, 5)} – ${cafe.hora_cierre.slice(0, 5)}`
+    : "Horario regular";
 
   return (
-    <div
-      onClick={() => navigate(path)}
-      className="
-        bg-[#27272a] /* Gris un poco más claro que el fondo */
-        rounded-none overflow-hidden 
-        shadow-md cursor-pointer 
-        transition duration-300 ease-in-out 
-        hover:shadow-2xl hover:-translate-y-1 hover:bg-[#323236] /* Ligeramente más claro al hover */
-        border-b-2 border-transparent hover:border-yellow-500 /* Detalle premium: borde inferior amarillo al hover */
-        text-gray-100 text-center
-        flex flex-col h-full
-        group
-      "
+    <Link
+      to={path}
+      aria-label={`Ver cafetería ${cafe.nombre}, ${isOpen ? "abierta" : "cerrada"}, horario ${horario}`}
+      className="group relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-[#0a1830] border border-white/[0.08] hover:border-white/25 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.7)] select-none flex flex-col justify-between focus-visible:ring-2 focus-visible:ring-[#B39A3A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0e2246] outline-none"
     >
-      {/* Imagen */}
-      <div className="h-48 w-full overflow-hidden relative">
-        <img
-          src={image}
-          alt={`Imagen de ${name}`}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[20%] group-hover:grayscale-0"
-        />
-        {/* Overlay oscuro sutil sobre la imagen para unificar tonos */}
-        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300"></div>
-      </div>
+      {/* Fotografía de fondo de borde a borde */}
+      <img
+        src={finalImage}
+        alt=""
+        loading="lazy"
+        onError={(e) => {
+          e.target.src = defaultImage;
+        }}
+        className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
+          isOpen ? "opacity-85 group-hover:opacity-95" : "grayscale-[35%] opacity-70 group-hover:opacity-80"
+        }`}
+      />
 
-      {/* Contenido */}
-      <div className="p-5 flex flex-col flex-grow justify-between">
-        <div>
-          <h3 className="text-lg font-bold mb-1 leading-tight text-gray-100 group-hover:text-yellow-400 transition-colors">
-            {name}
-          </h3>
+      {/* Degradados de legibilidad editorial (UNISON Navy) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0e2246] via-[#0e2246]/50 to-transparent opacity-95 transition-opacity duration-300 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0e2246]/70 via-transparent to-transparent opacity-75 pointer-events-none" />
 
-          {/* --- SECCIÓN DE RESULTADOS DE BÚSQUEDA --- */}
-          {matches.length > 0 && (
-            <div className="mt-2 text-left">
-              <span className="text-xs text-yellow-500 font-semibold block mb-1">
-                Encontrado:
-              </span>
-              <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
-                {matches.map(m => m.nombre).join(", ")}
-              </p>
-            </div>
+      {/* Cabecera superior interna: Estado, acreditación y número de catálogo */}
+      <div className="relative z-10 p-4 sm:p-5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {isOpen ? (
+            <span className="font-mono text-[11px] tracking-[0.2em] uppercase font-medium text-emerald-400 flex items-center gap-1.5 bg-[#071326]/60 backdrop-blur-sm px-2.5 py-1 rounded-full border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
+              ABIERTO
+            </span>
+          ) : (
+            <span className="font-mono text-[11px] tracking-[0.2em] uppercase font-medium text-rose-400 flex items-center gap-1.5 bg-[#071326]/60 backdrop-blur-sm px-2.5 py-1 rounded-full border border-rose-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400/80 inline-block" />
+              CERRADO
+            </span>
+          )}
+
+          {isVisited && (
+            <span className="font-mono text-[10px] tracking-wider uppercase text-emerald-300 bg-emerald-950/70 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm">
+              <FiCheck size={11} className="text-emerald-400" />
+              <span>Visitada</span>
+            </span>
           )}
         </div>
 
-        <p className="text-xs text-gray-500 mt-4 font-medium uppercase tracking-wider group-hover:text-gray-300 transition-colors">
-          Ver menú
-        </p>
+        <span className="text-[11px] font-mono text-white/65 tracking-wider bg-[#071326]/50 backdrop-blur-sm px-2 py-0.5 rounded">
+          {String(index + 1).padStart(2, "0")}
+        </span>
       </div>
-    </div>
+
+      {/* Bloque inferior: Facultad, Nombre, Coincidencias y Horario */}
+      <div className="relative z-10 p-4 sm:p-5 flex flex-col justify-end">
+        {facultadNombre && (
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-300 mb-1 line-clamp-1 block font-medium">
+            {facultadNombre}
+          </span>
+        )}
+
+        <h3 className="font-display text-2xl sm:text-[26px] font-normal text-[#F2F2F0] group-hover:text-white leading-[1.15] mb-2 line-clamp-2 transition-colors">
+          {cafe.nombre}
+        </h3>
+
+        {/* Coincidencias de búsqueda en platillos */}
+        {matchedDishes && matchedDishes.length > 0 && (
+          <div className="mb-3 p-2 rounded-lg bg-[#071326]/90 border border-[#B39A3A]/30 text-left backdrop-blur-sm">
+            <div className="flex items-center gap-1.5 text-[10px] font-mono font-semibold text-[#B39A3A] uppercase tracking-wider mb-0.5">
+              <FiSearch size={10} />
+              <span>Platillo coincidente</span>
+            </div>
+            <p className="text-xs text-neutral-200 line-clamp-1 font-light">
+              {matchedDishes.map((m) => m.nombre).join(", ")}
+            </p>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between text-xs font-mono text-neutral-300 pt-2.5 border-t border-white/[0.1]">
+          <span className="tracking-tight text-neutral-300">{horario}</span>
+          <span className="text-[11px] text-[#B39A3A] group-hover:text-amber-300 transition-colors inline-flex items-center gap-1 font-medium">
+            <span>Carta</span>
+            <FiArrowRight className="transform group-hover:translate-x-1 transition-transform" size={12} />
+          </span>
+        </div>
+      </div>
+    </Link>
   );
 };
 

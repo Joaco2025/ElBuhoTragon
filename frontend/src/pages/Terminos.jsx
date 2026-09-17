@@ -2,95 +2,67 @@
 import React from 'react';
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import ChatWidget from "../components/ChatWidget";
+import PageHeader from "../components/PageHeader";
 
 const Terminos = () => {
-    return (
-        // 1. ESTRUCTURA SEGURA (Fondo CSS Inline)
-        <div style={{
-            margin: 0,
-            padding: 0,
-            width: "100vw",
-            minHeight: "100vh",
-            backgroundColor: "#141b2d", // Fondo Azul Nocturno
-            backgroundSize: "100% 100%", // Clave para cubrir toda la pantalla
-            color: "white",
-            paddingTop: "3.2rem",
-            display: "flex",
-            flexDirection: "column",
-            position: "relative",
-            overflowX: "hidden",
-            boxSizing: "border-box"
-        }}>
-            <Header />
+  return (
+    <div className="min-h-screen w-full bg-[#0e2246] text-[#F2F2F0] flex flex-col font-sans selection:bg-[#163A70] selection:text-white">
+      <Header />
 
-            {/* 2. CONTENIDO PRINCIPAL */}
-            <main style={{ 
-                flexGrow: 1, 
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                padding: "2rem",
-                paddingTop: "6rem",
-                width: "100%"
-            }}>
-                
-                {/* 3. TARJETA GLASSMORPHISM */}
-                <div className="max-w-4xl w-full bg-[#1e2538]/60 backdrop-blur-lg border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl relative">
-                    
-                    {/* Detalle decorativo superior */}
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1/3 h-1 bg-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.5)] rounded-b-full"></div>
+      <main className="flex-grow pt-28 pb-24 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto w-full">
+        {/* Encabezado Editorial */}
+        <PageHeader
+          eyebrow="Marco Normativo y Académico"
+          title="Términos y Condiciones"
+          description="Lineamientos oficiales para la consulta, registro y participación comunitaria en la plataforma Hungry Owl."
+          maxWidth="max-w-4xl"
+        />
 
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-8 border-b border-white/10 pb-6 tracking-tight text-center">
-                        Términos y Condiciones
-                    </h1>
+        {/* Contenido Editorial */}
+        <div className="space-y-10 text-neutral-300 font-light leading-relaxed text-sm sm:text-base">
+          <section className="border-b border-white/[0.06] pb-8">
+            <h2 className="font-display text-2xl text-[#F2F2F0] mb-2.5 font-normal">
+              1. Naturaleza del Proyecto
+            </h2>
+            <p className="text-neutral-300 leading-relaxed">
+              Hungry Owl es un proyecto académico de software desarrollado para la comunidad de la Universidad de Sonora. Su propósito es brindar orientación gastronómica, localización geográfica de cafeterías y visualización de cartas de platillos dentro del campus Hermosillo.
+            </p>
+          </section>
 
-                    <div className="space-y-8 text-gray-300 leading-relaxed text-base md:text-lg">
-                        
-                        <section>
-                            <h2 className="text-xl font-bold text-yellow-500 mb-2 flex items-center gap-2">
-                                1. Sobre el Proyecto
-                            </h2>
-                            <p>
-                                "El Búho Tragón" es un proyecto académico desarrollado por estudiantes de la <strong>Universidad de Sonora</strong>.
-                                El objetivo principal es facilitar la visualización de menús y ubicaciones de las cafeterías dentro del campus universitario.
-                            </p>
-                        </section>
+          <section className="border-b border-white/[0.06] pb-8">
+            <h2 className="font-display text-2xl text-[#F2F2F0] mb-2.5 font-normal">
+              2. Exactitud de la Información
+            </h2>
+            <p className="text-neutral-300 leading-relaxed">
+              Los precios, menús, platillos y horarios registrados son recopilados directamente en los establecimientos físicos del campus. Si bien el sistema se actualiza de forma continua, los concesionarios pueden modificar precios o disponibilidad sin previo aviso.
+            </p>
+          </section>
 
-                        <section>
-                            <h2 className="text-xl font-bold text-yellow-500 mb-2 flex items-center gap-2">
-                                2. Uso de la Información
-                            </h2>
-                            <p>
-                                La información mostrada (precios, horarios, menús y disponibilidad) es recopilada con fines informativos. Aunque nos esforzamos por mantener los datos actualizados,
-                                no garantizamos la exactitud total en tiempo real. Los precios pueden variar sin previo aviso en los establecimientos físicos.
-                            </p>
-                        </section>
+          <section className="border-b border-white/[0.06] pb-8">
+            <h2 className="font-display text-2xl text-[#F2F2F0] mb-2.5 font-normal">
+              3. Participación y Reseñas Comunitarias
+            </h2>
+            <p className="text-neutral-300 leading-relaxed">
+              Las opiniones y valoraciones emitidas por los estudiantes deben apegarse al respeto mutuo y a la convivencia universitaria. Hungry Owl se reserva el derecho de moderar contenidos ofensivos, publicitarios o ajenos al objetivo del servicio gastronómico.
+            </p>
+          </section>
 
-                        <section>
-                            <h2 className="text-xl font-bold text-yellow-500 mb-2 flex items-center gap-2">
-                                3. Propiedad Intelectual
-                            </h2>
-                            <p>
-                                Todos los logotipos, marcas y nombres comerciales de las cafeterías mencionados pertenecen a sus respectivos dueños.
-                                El código fuente de este proyecto es propiedad intelectual de sus desarrolladores.
-                            </p>
-                        </section>
-
-                        <section>
-                            <h2 className="text-xl font-bold text-yellow-500 mb-2 flex items-center gap-2">
-                                4. Limitación de Responsabilidad
-                            </h2>
-                            <p>
-                                Este sitio web no procesa pagos reales ni realiza pedidos físicos. No nos hacemos responsables por inconvenientes derivados del uso de la información aquí presentada.
-                            </p>
-                        </section>
-                    </div>
-                </div>
-            </main>
-
-            <Footer />
+          <section>
+            <h2 className="font-display text-2xl text-[#F2F2F0] mb-2.5 font-normal">
+              4. Propiedad Intelectual e Identidad
+            </h2>
+            <p className="text-neutral-300 leading-relaxed">
+              Los logotipos e insignias institucionales son utilizados con fines de identificación académica universitaria. El código y diseño de la plataforma corresponden a los desarrolladores del proyecto en el Departamento de Matemáticas de la Universidad de Sonora.
+            </p>
+          </section>
         </div>
-    );
+      </main>
+
+      <Footer />
+      <ChatWidget />
+    </div>
+  );
 };
 
 export default Terminos;

@@ -1,17 +1,38 @@
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+@theme {
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  --color-canvas: #0e2246;
+  --color-canvas-deep: #071326;
+  --color-panel: #0a1830;
+  --color-panel-surface: #122b56;
+  --color-surface: #163466;
+  --color-surface-hover: #1b3d75;
+  --color-surface-border: rgba(255, 255, 255, 0.08);
+
+  --color-unison-blue: #163A70;
+  --color-unison-blue-deep: #0D2345;
+  --color-unison-blue-light: #204a8e;
+  --color-unison-gold: #8A741F;
+  --color-unison-gold-light: #B39A3A;
+  --color-unison-red: #702B32;
+  --color-unison-red-deep: #421C21;
+
+  --color-paper: #F2F2F0;
+  --color-silver: #d4d4d4;
+  --color-muted: #737373;
+}
 
 :root {
-  /* CAMBIO 1: Fuente Inter configurada como principal */
-  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color-scheme: dark;
+  color: #F2F2F0;
+  background-color: #0e2246;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -19,83 +40,97 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
 body {
   margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-/* CAMBIO 2: Eliminamos los estilos globales de 'button' 
-   para que no interfieran con tus diseños personalizados en Tailwind (filtros, chat, etc).
-   
-   Si necesitas un estilo base, es mejor usar una clase .btn-primary en lugar de afectar a todos los botones.
-*/
-/* button {
-  background-color: #f5c16c;
-  color: #4b3423;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 600;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease;
-} 
-*/
-
-button:focus,
-button:focus-visible {
-  outline: 4px solid auto; /* Outline estándar para accesibilidad */
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-}
-
-/* CAMBIO 3: Animación y Fondo Global reutilizable */
-@keyframes backgroundAnimation {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.page-bg {
-  min-height: 100vh;
-  width: 100vw;
-  margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  
-  /* Fondo configurado aquí para usarse en cualquier página */
-  background: linear-gradient(-45deg, #161b33, #1f2457, #2a3558);
-  background-size: 600% 600%;
-  animation: backgroundAnimation 30s ease infinite;
-  
-  color: white;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #0e2246;
+  color: #F2F2F0;
   overflow-x: hidden;
+}
+
+/* Tipografía de apoyo */
+.font-display {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.font-sans {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Indicador accesible de foco de alta visibilidad (Dorado UNISON) */
+:focus-visible {
+  outline: 2px solid #B39A3A !important;
+  outline-offset: 2px !important;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #B39A3A !important;
+  outline-offset: 2px !important;
+}
+
+/* Scrollbar personalizado refinado */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #071326;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B39A3A;
+}
+
+/* Animaciones suaves */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Estilos oscuros integrados para Leaflet OpenStreetMap */
+.leaflet-dark-tiles .leaflet-tile-pane {
+  filter: brightness(0.68) invert(1) contrast(1.25) hue-rotate(205deg) saturate(0.55);
+}
+
+.leaflet-popup-content-wrapper {
+  background: #071326 !important;
+  color: #F2F2F0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 0.875rem !important;
+  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.8) !important;
+}
+
+.leaflet-popup-tip {
+  background: #071326 !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: #a3a3a3 !important;
+  padding: 6px 8px !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: #ffffff !important;
 }

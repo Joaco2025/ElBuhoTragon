@@ -3,7 +3,8 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom"; 
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiUserPlus, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
+import ChatWidget from "../components/ChatWidget";
+import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
 
 const Registro = () => {
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
@@ -21,7 +22,6 @@ const Registro = () => {
     setMensaje("");
     setEsError(false);
 
-    // 1. Validación de Campos Vacíos
     if (!nombreUsuario || !contrasena || !email) {
       setMensaje("Todos los campos son obligatorios.");
       setEsError(true);
@@ -29,17 +29,14 @@ const Registro = () => {
       return;
     }
 
-    // 2. NUEVA VALIDACIÓN: Correo Institucional
-    // Verificamos si el string del email termina exactamente en "@unison.mx"
     if (!email.endsWith("@unison.mx")) {
-        setMensaje("Lo sentimos, solo estudiantes con correo institucional (@unison.mx) pueden registrarse.");
-        setEsError(true);
-        setIsLoading(false); // Detenemos la carga
-        return; // Detenemos la ejecución, no se envía nada al servidor
+      setMensaje("El registro requiere un correo institucional (@unison.mx).");
+      setEsError(true);
+      setIsLoading(false);
+      return;
     }
 
     try {
-      // Usamos el endpoint estándar del modelo Usuarios
       const respuesta = await fetch("http://127.0.0.1:8000/api/Usuarios/", {
         method: "POST",
         headers: {
@@ -54,7 +51,7 @@ const Registro = () => {
       });
 
       if (respuesta.ok) {
-        setMensaje("¡Registro exitoso! Ya puedes iniciar sesión.");
+        setMensaje("Registro exitoso. Tu cuenta ha sido creada, ya puedes iniciar sesión.");
         setEsError(false);
         setNombreUsuario("");
         setContrasena("");
@@ -62,179 +59,167 @@ const Registro = () => {
       } else {
         const contentType = respuesta.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
-            const errorData = await respuesta.json();
-            let errorMessage = "Error al registrar.";
-            
-            if (errorData.nombre_usuario) errorMessage = `Usuario: ${errorData.nombre_usuario[0]}`;
-            else if (errorData.email) errorMessage = `Email: ${errorData.email[0]}`;
-            else if (errorData.contrasena) errorMessage = `Contraseña: ${errorData.contrasena[0]}`;
-            else if (errorData.detail) errorMessage = errorData.detail;
+          const errorData = await respuesta.json();
+          let errorMessage = "Error al completar el registro.";
+          
+          if (errorData.nombre_usuario) errorMessage = `Usuario: ${errorData.nombre_usuario[0]}`;
+          else if (errorData.email) errorMessage = `Email: ${errorData.email[0]}`;
+          else if (errorData.contrasena) errorMessage = `Contraseña: ${errorData.contrasena[0]}`;
+          else if (errorData.detail) errorMessage = errorData.detail;
 
-            setMensaje(errorMessage);
+          setMensaje(errorMessage);
         } else {
-            console.error("Error del servidor (No es JSON):", await respuesta.text());
-            setMensaje("Hubo un problema interno en el servidor. Intenta más tarde.");
+          console.error("Error del servidor:", await respuesta.text());
+          setMensaje("Error interno del servidor universitario. Por favor intenta más tarde.");
         }
         setEsError(true);
       }
     } catch (error) {
-      console.error("Error de red o parsing:", error);
-      setMensaje("Ocurrió un error inesperado. Por favor intenta de nuevo.");
+      console.error("Error de conexión:", error);
+      setMensaje("Error de conexión con el servidor. Verifica tu red.");
       setEsError(true);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div style={{
-      margin: 0,
-      padding: 0,
-      width: "100vw",
-      minHeight: "100vh",
-      backgroundColor: "#141b2d",
-      backgroundSize: "100% 100%",
-      color: "white",
-      paddingTop: "3.2rem",
-      display: "flex",
-      flexDirection: "column",
-      position: "relative",
-      overflowX: "hidden",
-      boxSizing: "border-box"
-    }}>
+    <div className="min-h-screen w-full bg-[#0e2246] text-[#F2F2F0] flex flex-col font-sans selection:bg-[#163A70] selection:text-white">
       <Header />
 
-      <main style={{
-        flexGrow: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "2rem",
-        paddingTop: "6rem", 
-        width: "100%" 
-      }}>
-        
-        <div className="w-full max-w-md bg-[#1e2538]/60 backdrop-blur-lg border border-white/10 p-8 rounded-2xl shadow-2xl relative">
+      <main className="flex-grow flex items-center justify-center pt-32 pb-24 px-4 sm:px-6 lg:px-8 w-full">
+        <div className="w-full max-w-md mx-auto">
           
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1/2 h-1 bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)] rounded-b-full"></div>
-
+          {/* Encabezado Editorial */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">
-                Crear Cuenta
+            <span className="font-mono text-xs uppercase tracking-[0.25em] text-[#B39A3A] block mb-2 font-medium">
+              Comunidad Universitaria UNISON
+            </span>
+            <h1 className="font-display text-4xl sm:text-5xl text-[#F2F2F0] font-normal tracking-tight mb-2">
+              Crear Cuenta
             </h1>
-            <p className="text-gray-400 text-sm mt-2">
-                Únete a la comunidad del Búho Tragón
+            <p className="text-neutral-300 text-sm font-light leading-relaxed">
+              Regístrate con tu correo institucional para evaluar las cafeterías del campus.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            
-            <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300 ml-1">Nombre de usuario</label>
-                <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiUser className="text-gray-400 group-focus-within:text-green-400 transition-colors" size={20} />
-                    </div>
-                    <input
-                        type="text"
-                        placeholder="Ej. buho_master_23"
-                        value={nombreUsuario}
-                        onChange={(e) => setNombreUsuario(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-[#141b2d] border border-gray-600 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
-                        required
-                    />
-                </div>
-            </div>
-
-            <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300 ml-1">Correo Electrónico</label>
-                <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiMail className="text-gray-400 group-focus-within:text-green-400 transition-colors" size={20} />
-                    </div>
-                    <input
-                        type="email"
-                        placeholder="tucorreo@unison.mx"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-[#141b2d] border border-gray-600 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
-                        required
-                    />
-                </div>
-            </div>
-
-            <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300 ml-1">Contraseña</label>
-                <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiLock className="text-gray-400 group-focus-within:text-green-400 transition-colors" size={20} />
-                    </div>
-                    <input
-                        type={mostrarContrasena ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={contrasena}
-                        onChange={(e) => setContrasena(e.target.value)}
-                        className="w-full pl-10 pr-12 py-3 bg-[#141b2d] border border-gray-600 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
-                        required
-                    />
-                    <button
-                        type="button"
-                        onClick={() => setMostrarContrasena(!mostrarContrasena)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors cursor-pointer"
-                    >
-                        {mostrarContrasena ? <FiEyeOff size={20} /> : <FiEye size={20} />}
-                    </button>
-                </div>
-            </div>
-
-            {/* SECCIÓN DE MENSAJES (ERROR O ÉXITO) */}
+          {/* Formulario */}
+          <form 
+            onSubmit={handleSubmit} 
+            className="p-8 rounded-2xl bg-[#0a1830] border border-white/[0.1] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.6)]"
+          >
             {mensaje && (
-                <div className={`
-                    rounded-lg p-3 flex items-start gap-2 text-sm border animate-fade-in
-                    ${esError 
-                        ? "bg-red-500/10 border-red-500/50 text-red-400" 
-                        : "bg-green-500/10 border-green-500/50 text-green-400"}
-                `}>
-                    {/* Icono dinámico según el tipo de mensaje */}
-                    {esError ? (
-                        <FiAlertCircle className="mt-0.5 min-w-[18px]" size={18} />
-                    ) : (
-                        <FiCheckCircle className="mt-0.5 min-w-[18px]" size={18} />
-                    )}
-                    <span className="leading-snug">{mensaje}</span>
-                </div>
+              <div 
+                className={`p-3.5 rounded-xl text-xs font-mono flex items-center gap-2 mb-6 animate-fade-in ${
+                  esError 
+                    ? "bg-rose-950/40 border border-rose-500/40 text-rose-300" 
+                    : "bg-emerald-950/40 border border-emerald-500/40 text-emerald-300"
+                }`}
+                role="alert"
+              >
+                {esError ? <FiAlertCircle size={15} className="flex-shrink-0 text-rose-400" /> : <FiCheckCircle size={15} className="flex-shrink-0 text-emerald-400" />}
+                <span>{mensaje}</span>
+              </div>
             )}
 
-            <button
+            <div className="space-y-5">
+              <div>
+                <label 
+                  htmlFor="register-username" 
+                  className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1.5 font-medium"
+                >
+                  Nombre de Usuario
+                </label>
+                <div className="relative">
+                  <input
+                    id="register-username"
+                    type="text"
+                    required
+                    value={nombreUsuario}
+                    onChange={(e) => setNombreUsuario(e.target.value)}
+                    placeholder="ej. buho_21"
+                    className="w-full bg-[#071326] border border-white/[0.12] focus:border-[#B39A3A] text-white text-sm rounded-xl px-4 py-3 placeholder-neutral-400 focus:outline-none transition-colors pr-10 font-sans"
+                  />
+                  <FiUser className="absolute right-3.5 top-1/2 transform -translate-y-1/2 text-neutral-400 pointer-events-none" size={15} />
+                </div>
+              </div>
+
+              <div>
+                <label 
+                  htmlFor="register-email" 
+                  className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1.5 font-medium"
+                >
+                  Correo Institucional
+                </label>
+                <div className="relative">
+                  <input
+                    id="register-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="a22000000@unison.mx"
+                    className="w-full bg-[#071326] border border-white/[0.12] focus:border-[#B39A3A] text-white text-sm rounded-xl px-4 py-3 placeholder-neutral-400 focus:outline-none transition-colors pr-10 font-sans"
+                  />
+                  <FiMail className="absolute right-3.5 top-1/2 transform -translate-y-1/2 text-neutral-400 pointer-events-none" size={15} />
+                </div>
+                <span className="font-mono text-[10px] text-neutral-400 mt-1 block">
+                  Debe pertenecer al dominio @unison.mx
+                </span>
+              </div>
+
+              <div>
+                <label 
+                  htmlFor="register-password" 
+                  className="block font-mono text-[11px] uppercase tracking-wider text-neutral-300 mb-1.5 font-medium"
+                >
+                  Contraseña
+                </label>
+                <div className="relative">
+                  <input
+                    id="register-password"
+                    type={mostrarContrasena ? "text" : "password"}
+                    required
+                    value={contrasena}
+                    onChange={(e) => setContrasena(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-[#071326] border border-white/[0.12] focus:border-[#B39A3A] text-white text-sm rounded-xl px-4 py-3 pr-10 placeholder-neutral-400 focus:outline-none transition-colors font-sans"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setMostrarContrasena(!mostrarContrasena)}
+                    className="absolute right-3.5 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                    aria-label={mostrarContrasena ? "Ocultar contraseña" : "Ver contraseña"}
+                  >
+                    {mostrarContrasena ? <FiEyeOff size={15} /> : <FiEye size={15} />}
+                  </button>
+                </div>
+              </div>
+
+              <button
                 type="submit"
                 disabled={isLoading}
-                className={`
-                    w-full flex items-center justify-center gap-2 py-3 px-4 
-                    bg-green-600 text-white font-bold rounded-lg shadow-lg
-                    hover:bg-green-500 hover:scale-[1.02] active:scale-[0.98]
-                    transition-all duration-200
-                    ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
-            >
-                {isLoading ? "Creando cuenta..." : (
-                    <>
-                        Registrarse <FiUserPlus size={20} />
-                    </>
-                )}
-            </button>
+                className="w-full py-3 mt-2 bg-white text-black font-sans text-xs font-mono uppercase tracking-wider rounded-full hover:bg-neutral-200 transition-colors disabled:opacity-50 cursor-pointer font-medium"
+              >
+                {isLoading ? "Registrando usuario..." : "Crear Cuenta"}
+              </button>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-white/[0.08] text-center">
+              <p className="text-xs text-neutral-300 font-light">
+                ¿Ya cuentas con usuario registrado?{" "}
+                <Link to="/login" className="text-white hover:text-[#B39A3A] underline font-medium ml-1 transition-colors">
+                  Iniciar sesión
+                </Link>
+              </p>
+            </div>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-400">
-             ¿Ya tienes cuenta?{' '}
-             <Link to="/login" className="text-green-400 hover:text-green-300 font-semibold hover:underline decoration-green-400/50 underline-offset-4">
-               Inicia sesión
-             </Link>
-          </div>
         </div>
       </main>
 
       <Footer />
+      <ChatWidget />
     </div>
   );
 };
