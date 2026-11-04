@@ -13,7 +13,7 @@ export default function PantallaCuenta({ titulo, descripcion, children, pie }) {
           {pie && <div className="mt-6 text-[1.05rem]">{pie}</div>}
         </div>
 
-        <aside aria-label="Para qué sirve tu cuenta" className="zona-oscura hidden lg:flex flex-col justify-between self-stretch rounded-2xl bg-azul-hondo text-white p-10">
+        <aside aria-label="Para qué sirve tu cuenta" className="zona-oscura hidden lg:flex flex-col justify-between self-stretch rounded-2xl bg-zona text-white p-10">
           <img src={ILUSTRACIONES.cartel} alt="" width="220" height="220" className="h-52 w-52 object-contain" />
           <div>
             <p className="font-display text-3xl font-semibold leading-tight">Con tu cuenta UNISON puedes calificar cada cafetería.</p>

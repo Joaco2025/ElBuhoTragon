@@ -17,8 +17,8 @@ export default function Chips({ leyenda, opciones, valor, onChange, ocultarLeyen
           return (
             <label
               key={o.valor}
-              className={`shrink-0 inline-flex items-center min-h-11 px-4 rounded-full text-[0.95rem] font-semibold cursor-pointer select-none transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-azul has-[:focus-visible]:outline-offset-2 ${
-                activo ? "bg-tinta text-white" : "bg-superficie text-tinta hover:bg-hundido"
+              className={`shrink-0 inline-flex items-center min-h-11 px-4 rounded-full text-[0.95rem] font-semibold cursor-pointer select-none transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-foco has-[:focus-visible]:outline-offset-2 ${
+                activo ? "bg-tinta text-sobre-tinta" : "bg-superficie text-tinta hover:bg-hundido"
               }`}
             >
               <input type="radio" name={nombre} value={o.valor} checked={activo} onChange={() => onChange(o.valor)} className="sr-only" />

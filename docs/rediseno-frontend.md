@@ -4,7 +4,7 @@ Resumen técnico del rediseño "La carta del campus" y del cambio aditivo en el 
 
 ## Qué cambió en el frontend
 
-- **Identidad:** fondo claro, tinta azul UNISON, dorado como acento, Newsreader + Plus Jakarta Sans, búhos de la marca en sus colores reales. Sin texto mono ni etiquetas en mayúsculas.
+- **Identidad:** azul noche UNISON (modo oscuro, por defecto) o claro frío (opcional, botón sol/luna; se recuerda por visitante), dorado como acento, Newsreader + Plus Jakarta Sans, búhos de la marca en sus colores reales. Sin texto mono ni etiquetas en mayúsculas. El mapa sigue el tema.
 - **Inicio:** buscador de platillos con precio de todo el campus, presupuesto ("¿cuánto traes?"), "solo abiertas ahora", zona del campus y tipo de comida (categorías tomadas de los datos). Los filtros viven en la URL. Una "pizarra" muestra lo más barato para comer en cafeterías abiertas en ese momento.
 - **Ficha de cafetería:** estado ("Abierta hasta las 19:00" / "Abre mañana a las 07:00"), rango de precios, "Cómo llegar" (Google Maps a pie), carta agrupada por categoría con buscador, mapa, reseñas. Botón para preguntarle al Buhito por esa cafetería.
 - **Mapa:** mapa claro + lista de cafeterías con su estado (alternativa accesible al mapa).

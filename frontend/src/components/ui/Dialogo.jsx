@@ -15,7 +15,7 @@ export default function Dialogo({ abierto, titulo, descripcion, alCerrar, childr
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4">
-      <div className="absolute inset-0 bg-tinta/55 animate-aparecer" onClick={alCerrar} aria-hidden="true" />
+      <div className="absolute inset-0 bg-velo/60 animate-aparecer" onClick={alCerrar} aria-hidden="true" />
       <div
         ref={ref}
         role="dialog"

@@ -3,7 +3,7 @@ import { useId } from "react";
 const CLASE_CONTROL =
   "w-full rounded-caja bg-superficie border border-borde-campo text-tinta text-base px-3.5 py-3 " +
   "placeholder:text-tinta-suave/80 transition-colors hover:border-tinta-suave " +
-  "focus:outline-none focus-visible:outline-3 focus-visible:outline-azul focus-visible:outline-offset-1 " +
+  "focus:outline-none focus-visible:outline-3 focus-visible:outline-foco focus-visible:outline-offset-1 " +
   "aria-[invalid=true]:border-error disabled:bg-hundido";
 
 /**

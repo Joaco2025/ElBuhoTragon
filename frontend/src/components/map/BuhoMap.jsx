@@ -5,6 +5,7 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { cargarEstiloUnison } from "./estiloUnison";
+import { useTema } from "../../lib/tema";
 
 // MapLibre calcula la ruta de su worker a partir de su propio archivo, y eso se rompe
 // al empaquetar con Vite; se le indica explícitamente el worker como asset.
@@ -80,16 +81,18 @@ export default function BuhoMap({ puntos = [], centro, zoom = 16, onAbrirPunto, 
   const marcadores = useRef([]);
   const [error, setError] = useState(null);
   const [listo, setListo] = useState(false);
+  const [tema] = useTema();
+  const temaAplicado = useRef(tema);
 
   // Crear el mapa una sola vez
   useEffect(() => {
     let cancelado = false;
-    cargarEstiloUnison()
+    cargarEstiloUnison(temaAplicado.current)
       .then((estilo) => {
         if (cancelado || !contenedor.current) return;
         mapa.current = new maplibregl.Map({
           container: contenedor.current,
-          style: structuredClone(estilo),
+          style: estilo,
           center: centro ? [centro[1], centro[0]] : CENTRO_CAMPUS,
           zoom,
           pitch: 45,
@@ -126,6 +129,19 @@ export default function BuhoMap({ puntos = [], centro, zoom = 16, onAbrirPunto, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Cambio de tema con el mapa abierto: se cambia el estilo (los marcadores son HTML y se quedan)
+  useEffect(() => {
+    if (!listo || !mapa.current || temaAplicado.current === tema) return;
+    temaAplicado.current = tema;
+    let vigente = true;
+    cargarEstiloUnison(tema)
+      .then((estilo) => vigente && mapa.current?.setStyle(estilo))
+      .catch((err) => console.error("No se pudo cambiar el estilo del mapa:", err));
+    return () => {
+      vigente = false;
+    };
+  }, [listo, tema]);
+
   // Marcadores: se rehacen cuando cambian los puntos
   useEffect(() => {
     if (!listo || !mapa.current) return;
@@ -154,7 +170,7 @@ export default function BuhoMap({ puntos = [], centro, zoom = 16, onAbrirPunto, 
           No se pudo cargar el mapa en este navegador.
           {puntos.length === 1 && (
             <a
-              className="block mt-2 font-semibold text-azul underline"
+              className="block mt-2 font-semibold text-enlace underline"
               href={`https://www.google.com/maps/search/?api=1&query=${puntos[0].lat},${puntos[0].lon}`}
               target="_blank"
               rel="noopener noreferrer"

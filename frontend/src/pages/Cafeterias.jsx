@@ -79,7 +79,7 @@ export default function Cafeterias() {
         descripcion="Cada cafetería en la que dejas una reseña queda sellada aquí."
       />
 
-      <section aria-label="Tu avance" className="zona-oscura mt-8 rounded-2xl bg-azul-hondo text-white p-6 sm:p-8">
+      <section aria-label="Tu avance" className="zona-oscura mt-8 rounded-2xl bg-zona text-white p-6 sm:p-8">
         {listo ? (
           <>
             <div className="flex flex-wrap items-end gap-x-10 gap-y-4 cifras">

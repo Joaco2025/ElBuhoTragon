@@ -66,7 +66,7 @@ export default function Contacto() {
         <div className="space-y-8">
           <section aria-labelledby="contacto-correo">
             <h2 id="contacto-correo" className="font-display text-2xl font-semibold">Correo</h2>
-            <a href={`mailto:${CORREO}`} className="mt-1 inline-flex min-h-11 items-center font-semibold text-azul underline underline-offset-4 break-all">
+            <a href={`mailto:${CORREO}`} className="mt-1 inline-flex min-h-11 items-center font-semibold text-enlace underline underline-offset-4 break-all">
               {CORREO}
             </a>
           </section>
@@ -81,7 +81,7 @@ export default function Contacto() {
           </section>
           <section aria-labelledby="contacto-codigo">
             <h2 id="contacto-codigo" className="font-display text-2xl font-semibold">Código</h2>
-            <a href={REPOSITORIO} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex min-h-11 items-center gap-2 font-semibold text-azul underline underline-offset-4">
+            <a href={REPOSITORIO} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex min-h-11 items-center gap-2 font-semibold text-enlace underline underline-offset-4">
               Repositorio en GitHub <FiExternalLink aria-hidden="true" />
               <span className="sr-only">(se abre en otra pestaña)</span>
             </a>

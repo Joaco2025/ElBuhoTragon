@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { FiLogOut, FiMenu, FiMessageCircle, FiX } from "react-icons/fi";
+import { FiLogOut, FiMenu, FiMessageCircle, FiMoon, FiSun, FiX } from "react-icons/fi";
 import { PASAPORTE_ACTIVO } from "../../config";
 import { cerrarSesion, useSesion } from "../../lib/sesion";
 import { ILUSTRACIONES } from "../../lib/imagenes";
+import { useTema } from "../../lib/tema";
 import { useAsistente } from "../chat/contextoAsistente";
 import { clasesBoton } from "../ui/clasesBoton";
 
@@ -24,6 +25,7 @@ const claseEnlace = ({ isActive }) =>
 export default function Header() {
   const sesion = useSesion();
   const asistente = useAsistente();
+  const [tema, alternarTema] = useTema();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -79,6 +81,16 @@ export default function Header() {
           >
             <FiMessageCircle size={18} aria-hidden="true" />
             <span className="max-lg:sr-only">Pregúntale al Buhito</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={alternarTema}
+            title={tema === "oscuro" ? "Modo claro" : "Modo oscuro"}
+            className="max-md:hidden h-11 w-11 shrink-0 rounded-full flex items-center justify-center text-tinta-suave hover:bg-hundido hover:text-tinta cursor-pointer transition-colors"
+          >
+            {tema === "oscuro" ? <FiSun size={20} aria-hidden="true" /> : <FiMoon size={20} aria-hidden="true" />}
+            <span className="sr-only">{tema === "oscuro" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}</span>
           </button>
 
           <div className="hidden md:flex items-center gap-1 whitespace-nowrap">
@@ -138,6 +150,16 @@ export default function Header() {
               </NavLink>
             ))}
           </nav>
+          <div className="px-4 pb-2">
+            <button
+              type="button"
+              onClick={alternarTema}
+              className="w-full flex items-center gap-3 min-h-12 px-4 rounded-caja text-lg font-semibold hover:bg-hundido cursor-pointer"
+            >
+              {tema === "oscuro" ? <FiSun aria-hidden="true" /> : <FiMoon aria-hidden="true" />}
+              {tema === "oscuro" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            </button>
+          </div>
           <div className="px-4 pb-5 pt-1">
             {sesion ? (
               <div className="flex items-center justify-between gap-3 bg-fondo rounded-caja px-4 py-3">

@@ -3,47 +3,89 @@
 /*
  * Identidad "La carta del campus" (nov 2026). Detalle y razones en /.better-react-web-ui.md.
  * Usa SIEMPRE estos tokens (bg-fondo, text-tinta, bg-azul, text-oro-tinta...), no hex sueltos.
+ *
+ * Dos temas con los mismos nombres de token: OSCURO por defecto (valores de @theme) y
+ * CLARO con <html data-tema="claro"> (bloque de abajo). lib/tema.js cambia el atributo y
+ * un script en index.html lo pone antes de pintar, para que no parpadee.
  */
 @theme {
   --font-display: "Newsreader", Georgia, "Times New Roman", serif;
   --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  /* Superficies: se separan por un paso de tono, no por líneas ni sombras */
-  --color-fondo: #F4F6F9;
-  --color-superficie: #FFFFFF;
-  --color-hundido: #E8ECF2;
-  --color-linea: #CBD3DF;       /* separadores de tablas y listas largas */
-  --color-borde-campo: #7D8799; /* contorno de inputs: 3.6:1 sobre blanco (WCAG 1.4.11) */
+  /* Superficies: se separan por un paso de tono (más claro = más cerca), no por líneas ni sombras */
+  --color-fondo: #0B1730;        /* azul noche UNISON, apenas desaturado */
+  --color-superficie: #13244A;
+  --color-hundido: #1C3160;
+  --color-linea: #2A4272;        /* separadores de tablas y listas largas */
+  --color-borde-campo: #7387AB;  /* contorno de inputs: 4.2:1 sobre superficie (WCAG 1.4.11) */
+  --color-zona: #11295A;         /* paneles destacados: pizarra, pie, pasaporte (texto blanco 13:1) */
+  --color-velo: #000814;         /* telón detrás de diálogos y del chat */
 
-  /* Texto */
-  --color-tinta: #0E2246;       /* el azul nocturno de la versión anterior, ahora como tinta */
-  --color-tinta-suave: #45526A;
-  --color-tinta-clara: #C9D2E3;  /* texto secundario sobre azul-hondo (10:1) */
+  /* Texto: claro suave, no blanco puro */
+  --color-tinta: #ECF0F6;
+  --color-tinta-suave: #A8B5CC;  /* 7.4:1 sobre superficie */
+  --color-tinta-clara: #C3CEE0;  /* texto secundario sobre zona */
+  --color-sobre-tinta: #0B1730;  /* texto sobre un relleno color tinta (chip activo) */
+  --color-enlace: #8DB5F2;
+  --color-foco: #E2B33C;         /* anillo de foco: 7.8:1 sobre superficie */
 
   /* UNISON */
-  --color-azul: #163A70;        /* acción principal */
-  --color-azul-hondo: #0D2345;  /* hover de la acción, pie de página */
-  --color-oro: #E2B33C;         /* relleno: estado activo, marca de presupuesto (nunca texto sobre claro) */
-  --color-oro-tinta: #7A5F0E;   /* dorado legible como texto sobre claro (6.0:1) */
-  --color-oro-suave: #FBF1D3;
+  --color-azul: #3264B8;         /* acción principal (texto blanco 5.9:1) */
+  --color-azul-hondo: #3D72CC;   /* hover de la acción: en oscuro, se aclara */
+  --color-oro: #E2B33C;          /* relleno: estado activo, botón del Buhito, precios en la pizarra */
+  --color-sobre-oro: #0E2246;    /* texto sobre oro, en ambos temas */
+  --color-oro-tinta: #E8C35C;    /* dorado como texto */
+  --color-oro-suave: #262A33;    /* hover cálido de fichas */
+  --color-estrella: #C9A43A;
 
   /* Del búho y del ladrillo de los edificios del campus: se usa poco */
   --color-ladrillo: #A4452C;
 
   /* Estados */
-  --color-abierto: #1E7A4C;
-  --color-abierto-suave: #E1F1E8;
-  --color-cerrado: #5B6578;
-  --color-error: #B42318;
-  --color-error-suave: #FDECEA;
+  --color-abierto: #5BC98B;
+  --color-abierto-suave: #123224;
+  --color-cerrado: #97A3B8;
+  --color-error: #FF8A80;
+  --color-error-suave: #3B1619;
 
   --radius-caja: 0.5rem;
 
   --ease-salida: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-:root {
+/* Tema claro: mismos tokens, otros valores */
+:root[data-tema="claro"] {
   color-scheme: light;
+  --color-fondo: #F4F6F9;
+  --color-superficie: #FFFFFF;
+  --color-hundido: #E8ECF2;
+  --color-linea: #CBD3DF;
+  --color-borde-campo: #7D8799;  /* 3.6:1 sobre blanco */
+  --color-zona: #0D2345;
+  --color-velo: #0E2246;
+
+  --color-tinta: #0E2246;
+  --color-tinta-suave: #45526A;
+  --color-tinta-clara: #C9D2E3;
+  --color-sobre-tinta: #FFFFFF;
+  --color-enlace: #163A70;
+  --color-foco: #163A70;
+
+  --color-azul: #163A70;
+  --color-azul-hondo: #0D2345;
+  --color-oro-tinta: #7A5F0E;    /* 6.0:1 sobre blanco */
+  --color-oro-suave: #FBF1D3;
+  --color-estrella: #A6851C;     /* 3.4:1 sobre blanco (gráfico) */
+
+  --color-abierto: #1E7A4C;
+  --color-abierto-suave: #E1F1E8;
+  --color-cerrado: #5B6578;
+  --color-error: #B42318;
+  --color-error-suave: #FDECEA;
+}
+
+:root {
+  color-scheme: dark;
   font-family: var(--font-sans);
   line-height: 1.55;
   color: var(--color-tinta);
@@ -72,7 +114,7 @@ a, button, input, select, textarea, label {
 
 ::selection {
   background: var(--color-oro);
-  color: var(--color-tinta);
+  color: var(--color-sobre-oro);
 }
 
 /* Títulos: Newsreader con tamaño óptico y un poco de tracking negativo */
@@ -88,7 +130,7 @@ a, button, input, select, textarea, label {
 
 /* Foco visible en todo lo interactivo; en zonas oscuras el anillo es dorado */
 :focus-visible {
-  outline: 3px solid var(--color-azul);
+  outline: 3px solid var(--color-foco);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -135,6 +177,24 @@ a, button, input, select, textarea, label {
   transform: scale(1.2);
   outline: 3px solid var(--color-tinta);
   outline-offset: 2px;
+}
+
+/* Controles del mapa: en oscuro, iconos claros */
+:root:not([data-tema="claro"]) .maplibregl-map .maplibregl-ctrl-group {
+  background: var(--color-superficie);
+}
+:root:not([data-tema="claro"]) .maplibregl-map .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1) brightness(0.9);
+}
+:root:not([data-tema="claro"]) .maplibregl-map .maplibregl-ctrl-attrib {
+  background: rgba(11, 23, 48, 0.85);
+  color: var(--color-tinta-suave);
+}
+:root:not([data-tema="claro"]) .maplibregl-map .maplibregl-ctrl-attrib a {
+  color: var(--color-tinta-suave);
+}
+:root:not([data-tema="claro"]) .maplibregl-map .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
 }
 
 /* Prefijo .maplibregl-map: el CSS de MapLibre se carga después (carga diferida) y

@@ -142,7 +142,7 @@ export default function PlantillaCafeteria() {
   return (
     <>
       <Contenedor className="pt-6 sm:pt-8">
-        <Link to="/" className="inline-flex items-center gap-2 min-h-11 font-semibold text-azul hover:underline underline-offset-4">
+        <Link to="/" className="inline-flex items-center gap-2 min-h-11 font-semibold text-enlace hover:underline underline-offset-4">
           <FiArrowLeft aria-hidden="true" /> Todas las cafeterías
         </Link>
 
@@ -220,7 +220,7 @@ export default function PlantillaCafeteria() {
                 </div>
                 {tiendita.direccion && <p className="mt-3 text-tinta-suave">{tiendita.direccion}</p>}
                 {destino && (
-                  <a href={destino} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 min-h-11 font-semibold text-azul underline underline-offset-4">
+                  <a href={destino} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 min-h-11 font-semibold text-enlace underline underline-offset-4">
                     Abrir en Google Maps <FiExternalLink aria-hidden="true" />
                     <span className="sr-only">(en otra pestaña)</span>
                   </a>

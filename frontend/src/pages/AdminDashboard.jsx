@@ -176,7 +176,7 @@ export default function AdminDashboard() {
                         <Foto foto={fotoMiniatura(t)} sizes="64px" className="w-16 rounded-[0.375rem] shrink-0" />
                         <div className="min-w-0">
                           <p className="font-semibold leading-snug">{t.nombre}</p>
-                          <Link to={`/cafeterias/${t.id_tiendita}`} className="inline-flex items-center gap-1 text-sm text-azul underline underline-offset-2">
+                          <Link to={`/cafeterias/${t.id_tiendita}`} className="inline-flex items-center gap-1 text-sm text-enlace underline underline-offset-2">
                             Ver ficha <FiExternalLink size={12} aria-hidden="true" />
                           </Link>
                         </div>

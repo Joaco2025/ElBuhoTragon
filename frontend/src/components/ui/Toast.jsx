@@ -21,8 +21,8 @@ export function ProveedorToast({ children }) {
         {toast && (
           <div
             key={toast.clave}
-            className={`pointer-events-auto animate-aparecer flex items-center gap-3 rounded-full pl-4 pr-1.5 py-1.5 shadow-[0_12px_32px_-8px_rgba(14,34,70,0.45)] text-[0.95rem] font-medium ${
-              toast.tipo === "error" ? "bg-error text-white" : "bg-tinta text-white"
+            className={`zona-oscura pointer-events-auto animate-aparecer flex items-center gap-3 rounded-full pl-4 pr-1.5 py-1.5 shadow-[0_12px_32px_-8px_rgba(14,34,70,0.45)] text-[0.95rem] font-medium ${
+              toast.tipo === "error" ? "bg-error text-fondo" : "bg-zona text-white"
             }`}
           >
             {toast.tipo === "error" ? <FiAlertCircle aria-hidden="true" /> : <FiCheckCircle aria-hidden="true" className="text-oro" />}
@@ -30,7 +30,7 @@ export function ProveedorToast({ children }) {
             <button
               type="button"
               onClick={() => setToast(null)}
-              className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-white/15 cursor-pointer zona-oscura"
+              className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-white/15 cursor-pointer"
               aria-label="Cerrar aviso"
             >
               <FiX aria-hidden="true" />

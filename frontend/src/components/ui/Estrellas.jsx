@@ -1,8 +1,8 @@
 import { useId, useState } from "react";
 import { FaStar } from "react-icons/fa";
 
-// #A6851C: dorado con 3.4:1 sobre blanco (contraste mínimo para gráficos, WCAG 1.4.11)
-const LLENA = "text-[#A6851C]";
+// Token por tema con al menos 3:1 sobre la superficie (contraste para gráficos, WCAG 1.4.11)
+const LLENA = "text-estrella";
 const VACIA = "text-linea";
 
 /** Calificación de solo lectura */
@@ -29,7 +29,7 @@ export function SelectorEstrellas({ valor, onChange, etiqueta = "Calificación" 
         {[1, 2, 3, 4, 5].map((n) => (
           <label
             key={n}
-            className="relative h-11 w-11 flex items-center justify-center rounded-full cursor-pointer hover:bg-hundido has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-azul"
+            className="relative h-11 w-11 flex items-center justify-center rounded-full cursor-pointer hover:bg-hundido has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-foco"
             onMouseEnter={() => setHover(n)}
           >
             <input

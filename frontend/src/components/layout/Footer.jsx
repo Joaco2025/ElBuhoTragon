@@ -6,7 +6,7 @@ const enlace = "inline-flex min-h-11 items-center text-tinta-clara hover:text-wh
 
 export default function Footer() {
   return (
-    <footer className="zona-oscura bg-azul-hondo text-white mt-24">
+    <footer className="zona-oscura bg-zona text-white mt-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-14 pb-8">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr] md:items-start">
           <div className="flex items-start gap-4">

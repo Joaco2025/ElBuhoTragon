@@ -36,7 +36,7 @@ export default function Pestanas({ pestanas, activa, onChange, etiqueta }) {
               onClick={() => onChange(p.id)}
               onKeyDown={(e) => mover(e, i)}
               className={`shrink-0 min-h-11 px-4 rounded-full font-semibold cursor-pointer transition-colors cifras ${
-                seleccionada ? "bg-tinta text-white" : "text-tinta-suave hover:bg-hundido hover:text-tinta"
+                seleccionada ? "bg-tinta text-sobre-tinta" : "text-tinta-suave hover:bg-hundido hover:text-tinta"
               }`}
             >
               {p.etiqueta}

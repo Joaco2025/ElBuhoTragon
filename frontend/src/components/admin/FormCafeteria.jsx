@@ -76,7 +76,7 @@ export default function FormCafeteria({ tiendita, facultades, alGuardar, alCance
 
       <div className="flex items-center gap-4">
         {vistaPrevia && <Foto foto={vistaPrevia} className="w-28 rounded-caja shrink-0" />}
-        <label className="inline-flex items-center gap-2 min-h-11 px-5 rounded-full bg-hundido font-semibold cursor-pointer hover:bg-linea has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-azul">
+        <label className="inline-flex items-center gap-2 min-h-11 px-5 rounded-full bg-hundido font-semibold cursor-pointer hover:bg-linea has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-foco">
           <FiImage aria-hidden="true" />
           {vistaPrevia ? "Cambiar foto" : "Subir foto"}
           <input type="file" accept="image/*" onChange={elegirFoto} className="sr-only" />

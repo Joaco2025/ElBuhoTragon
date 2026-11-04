@@ -97,7 +97,7 @@ export default function Registro() {
       pie={
         <p>
           ¿Ya tienes cuenta?{" "}
-          <Link to="/login" className="font-semibold text-azul underline underline-offset-4">
+          <Link to="/login" className="font-semibold text-enlace underline underline-offset-4">
             Inicia sesión
           </Link>
         </p>

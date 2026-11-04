@@ -128,7 +128,7 @@ export default function ChatWidget() {
   return (
     <>
       <div
-        className={`fixed inset-0 z-[90] bg-tinta/45 transition-opacity duration-200 ${abierto ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-[90] bg-velo/55 transition-opacity duration-200 ${abierto ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         onClick={cerrar}
         aria-hidden="true"
       />
@@ -240,7 +240,7 @@ export default function ChatWidget() {
                 }
               }}
               placeholder="Escribe tu pregunta"
-              className="flex-1 resize-none max-h-32 rounded-3xl bg-fondo border border-borde-campo px-4 py-3 text-base placeholder:text-tinta-suave/80 focus:outline-none focus-visible:outline-3 focus-visible:outline-azul"
+              className="flex-1 resize-none max-h-32 rounded-3xl bg-fondo border border-borde-campo px-4 py-3 text-base placeholder:text-tinta-suave/80 focus:outline-none focus-visible:outline-3 focus-visible:outline-foco"
             />
             <button
               type="submit"

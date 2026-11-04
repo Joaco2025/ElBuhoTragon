@@ -54,7 +54,7 @@ export default function Login() {
       pie={
         <p>
           ¿No tienes cuenta?{" "}
-          <Link to="/registro" className="font-semibold text-azul underline underline-offset-4">
+          <Link to="/registro" className="font-semibold text-enlace underline underline-offset-4">
             Crea una con tu correo @unison.mx
           </Link>
         </p>

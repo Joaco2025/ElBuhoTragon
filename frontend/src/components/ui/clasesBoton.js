@@ -2,9 +2,9 @@
 const VARIANTES = {
   primario: "bg-azul text-white hover:bg-azul-hondo active:bg-azul-hondo",
   secundario: "bg-hundido text-tinta hover:bg-linea active:bg-linea",
-  oro: "bg-oro text-tinta hover:brightness-95 active:brightness-90",
-  peligro: "bg-error text-white hover:brightness-110 active:brightness-95",
-  fantasma: "text-azul hover:bg-hundido active:bg-linea",
+  oro: "bg-oro text-sobre-oro hover:brightness-95 active:brightness-90",
+  peligro: "bg-error text-fondo hover:brightness-110 active:brightness-95",
+  fantasma: "text-enlace hover:bg-hundido active:bg-linea",
 };
 
 const TAMANOS = {

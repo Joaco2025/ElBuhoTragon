@@ -24,7 +24,7 @@ export default function Filtros({ filtros, cambiar, limpiar, categorias, faculta
           placeholder="Busca un platillo o cafetería"
           autoComplete="off"
           enterKeyHint="search"
-          className="w-full h-16 rounded-full bg-superficie border-2 border-transparent pl-14 pr-14 text-lg placeholder:text-tinta-suave/80 shadow-[0_1px_0_rgba(14,34,70,0.04)] hover:border-hundido focus:outline-none focus-visible:border-azul focus-visible:outline-3 focus-visible:outline-azul focus-visible:outline-offset-2 [&::-webkit-search-cancel-button]:hidden"
+          className="w-full h-16 rounded-full bg-superficie border-2 border-transparent pl-14 pr-14 text-lg placeholder:text-tinta-suave/80 shadow-[0_1px_0_rgba(14,34,70,0.04)] hover:border-hundido focus:outline-none focus-visible:border-foco focus-visible:outline-3 focus-visible:outline-foco focus-visible:outline-offset-2 [&::-webkit-search-cancel-button]:hidden"
         />
         {filtros.q && (
           <button
@@ -51,7 +51,7 @@ export default function Filtros({ filtros, cambiar, limpiar, categorias, faculta
             />
             <span
               aria-hidden="true"
-              className="relative h-7 w-12 rounded-full bg-borde-campo transition-colors peer-checked:bg-abierto peer-focus-visible:outline-3 peer-focus-visible:outline-azul peer-focus-visible:outline-offset-2 after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5"
+              className="relative h-7 w-12 rounded-full bg-borde-campo transition-colors peer-checked:bg-abierto peer-focus-visible:outline-3 peer-focus-visible:outline-foco peer-focus-visible:outline-offset-2 after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5"
             />
             <span className="font-semibold">Solo abiertas ahora</span>
           </label>
@@ -64,7 +64,7 @@ export default function Filtros({ filtros, cambiar, limpiar, categorias, faculta
               id={`${id}-fac`}
               value={filtros.fac}
               onChange={(e) => cambiar("fac", e.target.value)}
-              className="min-h-11 max-w-full rounded-full bg-superficie border border-borde-campo pl-4 pr-9 text-[0.95rem] font-semibold cursor-pointer focus:outline-none focus-visible:outline-3 focus-visible:outline-azul"
+              className="min-h-11 max-w-full rounded-full bg-superficie border border-borde-campo pl-4 pr-9 text-[0.95rem] font-semibold cursor-pointer focus:outline-none focus-visible:outline-3 focus-visible:outline-foco"
             >
               <option value="">Todas las facultades</option>
               {facultades.map((f) => (
@@ -88,7 +88,7 @@ export default function Filtros({ filtros, cambiar, limpiar, categorias, faculta
       )}
 
       {hayFiltros && (
-        <button type="button" onClick={limpiar} className="inline-flex items-center gap-2 min-h-11 font-semibold text-azul underline underline-offset-4 cursor-pointer hover:text-azul-hondo">
+        <button type="button" onClick={limpiar} className="inline-flex items-center gap-2 min-h-11 font-semibold text-enlace underline underline-offset-4 cursor-pointer hover:text-tinta">
           <FiX aria-hidden="true" /> Quitar filtros
         </button>
       )}

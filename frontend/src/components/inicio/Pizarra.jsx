@@ -12,7 +12,7 @@ export default function Pizarra({ platillos, tienditas, cargando, abiertas }) {
   const porId = Object.fromEntries(tienditas.map((t) => [t.id_tiendita, t]));
 
   return (
-    <section aria-labelledby="pizarra-titulo" className="zona-oscura relative rounded-2xl bg-azul-hondo text-white p-5 sm:p-7 lg:p-8 overflow-hidden">
+    <section aria-labelledby="pizarra-titulo" className="zona-oscura relative rounded-2xl bg-zona text-white p-5 sm:p-7 lg:p-8 overflow-hidden">
       <img
         src={abiertas || cargando ? ILUSTRACIONES.carta : ILUSTRACIONES.dormido}
         alt=""

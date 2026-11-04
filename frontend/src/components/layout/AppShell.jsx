@@ -39,7 +39,7 @@ export default function AppShell() {
       <ContextoAsistente.Provider value={valor}>
         <a
           href="#contenido"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-[200] focus:rounded-full focus:bg-tinta focus:px-5 focus:py-3 focus:text-white zona-oscura"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-[200] focus:rounded-full focus:bg-tinta focus:px-5 focus:py-3 focus:text-sobre-tinta"
         >
           Saltar al contenido
         </a>

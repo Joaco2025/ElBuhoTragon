@@ -64,7 +64,7 @@ export default function CartaMenu({ platillos }) {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar en la carta"
-            className="w-full min-h-11 rounded-full bg-superficie border border-borde-campo pl-11 pr-11 focus:outline-none focus-visible:outline-3 focus-visible:outline-azul [&::-webkit-search-cancel-button]:hidden"
+            className="w-full min-h-11 rounded-full bg-superficie border border-borde-campo pl-11 pr-11 focus:outline-none focus-visible:outline-3 focus-visible:outline-foco [&::-webkit-search-cancel-button]:hidden"
           />
           {busqueda && (
             <button
