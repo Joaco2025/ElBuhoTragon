@@ -1,5 +1,5 @@
 // frontend/src/components/map/BuhoMap.jsx
-// Mapa vectorial (MapLibre GL) con la paleta UNISON. Reemplaza a Leaflet.
+// Mapa vectorial (MapLibre GL) con la paleta del sitio. Reemplaza a Leaflet.
 import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -33,29 +33,25 @@ const ES_TACTIL = typeof window !== "undefined" && window.matchMedia?.("(pointer
 // nombres y horarios vienen de la base de datos.
 function crearPopup(punto, onAbrirPunto) {
   const caja = document.createElement("div");
-  caja.className = "text-center min-w-[190px] p-1";
-
-  const etiqueta = document.createElement("span");
-  etiqueta.className = "font-mono text-[11px] uppercase tracking-[0.2em] text-unison-gold-light block mb-1";
-  etiqueta.textContent = "Cafetería UNISON";
+  caja.className = "min-w-[200px]";
 
   const nombre = document.createElement("h3");
-  nombre.className = "font-display text-xl text-paper mb-2 leading-snug";
+  nombre.className = "font-display text-xl font-semibold text-tinta leading-snug pr-6";
   nombre.textContent = punto.nombre;
-  caja.append(etiqueta, nombre);
+  caja.append(nombre);
 
   if (punto.horario) {
     const horario = document.createElement("div");
-    horario.className = "text-xs font-mono text-neutral-200 mb-3 bg-white/[0.08] py-1.5 px-3 rounded-md border border-white/[0.08]";
-    horario.textContent = punto.horario;
+    horario.className = "mt-1 text-sm text-tinta-suave cifras";
+    horario.textContent = `Horario: ${punto.horario}`;
     caja.append(horario);
   }
 
   if (onAbrirPunto) {
     const boton = document.createElement("button");
     boton.type = "button";
-    boton.className = "w-full bg-unison-blue hover:bg-unison-blue-light text-white text-sm font-mono uppercase tracking-wider py-2.5 px-4 rounded-full transition-colors cursor-pointer border border-unison-blue-light/50";
-    boton.textContent = "Consultar carta";
+    boton.className = "mt-3 w-full min-h-11 bg-azul hover:bg-azul-hondo text-white font-semibold px-4 rounded-full transition-colors cursor-pointer";
+    boton.textContent = "Ver menú";
     boton.addEventListener("click", () => onAbrirPunto(punto));
     caja.append(boton);
   }
@@ -74,7 +70,7 @@ function crearMarcador(punto) {
  * @param {Array<{id, lat, lon, nombre, horario?}>} puntos  Cafeterías a marcar
  * @param {[number, number]} [centro]  [lat, lon]; si falta, se encuadran los puntos
  * @param {number} [zoom]
- * @param {(punto) => void} [onAbrirPunto]  Si se pasa, el popup muestra "Consultar carta"
+ * @param {(punto) => void} [onAbrirPunto]  Si se pasa, el popup muestra "Ver menú"
  * @param {boolean} [gestosCooperativos]  Para mapas dentro de una página con scroll:
  *        hace falta Ctrl/dos dedos para mover el mapa
  */
@@ -144,18 +140,21 @@ export default function BuhoMap({ puntos = [], centro, zoom = 16, onAbrirPunto, 
     if (!centro && puntos.length > 1) {
       const limites = new maplibregl.LngLatBounds();
       puntos.forEach((p) => limites.extend([p.lon, p.lat]));
-      mapa.current.fitBounds(limites, { padding: 60, maxZoom: 17, pitch: 45, duration: 0 });
+      const encuadrar = () => mapa.current?.fitBounds(limites, { padding: 60, maxZoom: 17, pitch: 45, duration: 0 });
+      // Antes de que cargue el estilo, fitBounds ignoraba el padding (marcadores pegados al borde)
+      if (mapa.current.loaded()) encuadrar();
+      else mapa.current.once("load", encuadrar);
     }
   }, [listo, puntos, centro, onAbrirPunto]);
 
   if (error) {
     return (
-      <div className={`w-full h-full flex items-center justify-center bg-canvas-deep text-center p-6 ${className}`}>
-        <p className="text-sm text-silver">
+      <div className={`w-full h-full flex items-center justify-center bg-hundido text-center p-6 ${className}`}>
+        <p className="text-tinta-suave">
           No se pudo cargar el mapa en este navegador.
           {puntos.length === 1 && (
             <a
-              className="block mt-2 text-unison-gold-light underline"
+              className="block mt-2 font-semibold text-azul underline"
               href={`https://www.google.com/maps/search/?api=1&query=${puntos[0].lat},${puntos[0].lon}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -168,5 +167,5 @@ export default function BuhoMap({ puntos = [], centro, zoom = 16, onAbrirPunto, 
     );
   }
 
-  return <div ref={contenedor} className={`w-full h-full bg-canvas-deep ${className}`} />;
+  return <div ref={contenedor} className={`w-full h-full bg-hundido ${className}`} />;
 }

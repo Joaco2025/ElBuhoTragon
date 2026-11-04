@@ -1,3 +1,4 @@
+import base64
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
 from unittest.mock import patch
@@ -312,3 +313,119 @@ class RecuperacionRAGTests(TestCase):
         resultado = self.rag.query("¿dónde venden molletes?", history=[])
         self.assertTrue(resultado['context'][0].startswith("PLATILLOS QUE COINCIDEN"))
         self.assertIn("Mollete Sencillo en Cafeteria Artes ($30 MXN)", self.prompts[-1][1])
+
+
+class ImagenesTienditasTests(TestCase):
+    """?sin_imagen=1 y /api/Tienditas/<id>/imagen/ (añadidos; la respuesta por defecto no cambia)."""
+
+    # PNG de 1x1 píxel
+    PNG = base64.b64decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+    )
+
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+        self.facultad = Facultades.objects.create(nombre='Ciencias Exactas')
+        self.con_foto = Tienditas.objects.create(
+            nombre='Con foto', id_facultad=self.facultad,
+            imagen_url='data:image/png;base64,' + base64.b64encode(self.PNG).decode(),
+        )
+        self.sin_foto = Tienditas.objects.create(nombre='Sin foto', id_facultad=self.facultad)
+        self.vacia = Tienditas.objects.create(nombre='Vacía', id_facultad=self.facultad, imagen_url='')
+        self.externa = Tienditas.objects.create(
+            nombre='Externa', id_facultad=self.facultad, imagen_url='https://example.com/foto.jpg',
+        )
+        self.rota = Tienditas.objects.create(nombre='Rota', id_facultad=self.facultad, imagen_url='no-es-imagen')
+
+    def _por_id(self, datos):
+        return {t['id_tiendita']: t for t in datos}
+
+    # --- Lista y detalle ---
+
+    def test_lista_por_defecto_conserva_imagen_url(self):
+        res = self.client.get('/api/Tienditas/')
+        self.assertEqual(res.status_code, 200)
+        fila = self._por_id(res.data)[self.con_foto.id_tiendita]
+        self.assertTrue(fila['imagen_url'].startswith('data:image/png;base64,'))
+        self.assertNotIn('tiene_imagen', fila)
+
+    def test_lista_sin_imagen_omite_base64_y_marca_tiene_imagen(self):
+        res = self.client.get('/api/Tienditas/?sin_imagen=1')
+        self.assertEqual(res.status_code, 200)
+        filas = self._por_id(res.data)
+        self.assertTrue(all('imagen_url' not in t for t in res.data))
+        self.assertTrue(filas[self.con_foto.id_tiendita]['tiene_imagen'])
+        self.assertTrue(filas[self.externa.id_tiendita]['tiene_imagen'])
+        self.assertFalse(filas[self.sin_foto.id_tiendita]['tiene_imagen'])
+        self.assertFalse(filas[self.vacia.id_tiendita]['tiene_imagen'])
+        # El resto de los campos sigue igual
+        self.assertEqual(filas[self.con_foto.id_tiendita]['nombre'], 'Con foto')
+        self.assertEqual(filas[self.con_foto.id_tiendita]['id_facultad'], self.facultad.id_facultad)
+
+    def test_valores_distintos_de_1_no_activan_el_modo_ligero(self):
+        res = self.client.get('/api/Tienditas/?sin_imagen=0')
+        self.assertIn('imagen_url', res.data[0])
+
+    def test_detalle_sin_imagen(self):
+        res = self.client.get(f'/api/Tienditas/{self.con_foto.id_tiendita}/?sin_imagen=1')
+        self.assertEqual(res.status_code, 200)
+        self.assertNotIn('imagen_url', res.data)
+        self.assertTrue(res.data['tiene_imagen'])
+
+    def test_sin_imagen_no_afecta_escrituras_del_admin(self):
+        admin = Usuarios.objects.create(
+            nombre_usuario='admin', contrasena=make_password('ClaveSegura#2026'),
+            email='admin@unison.mx', es_admin=1, fecha_registro=timezone.now(),
+        )
+        res = self.client.post('/api/login/', {'username': 'admin', 'password': 'ClaveSegura#2026'}, format='json')
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access_token']}")
+        res = self.client.patch(
+            f'/api/Tienditas/{self.sin_foto.id_tiendita}/?sin_imagen=1',
+            {'imagen_url': 'data:image/png;base64,AAAA'}, format='json',
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['imagen_url'], 'data:image/png;base64,AAAA')
+        self.sin_foto.refresh_from_db()
+        self.assertEqual(self.sin_foto.imagen_url, 'data:image/png;base64,AAAA')
+
+    # --- Endpoint de imagen ---
+
+    def test_imagen_publica_con_tipo_y_cache(self):
+        res = self.client.get(f'/api/Tienditas/{self.con_foto.id_tiendita}/imagen/')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'image/png')
+        self.assertEqual(res.content, self.PNG)
+        self.assertIn('max-age=300', res['Cache-Control'])
+        self.assertTrue(res['ETag'].startswith('"'))
+
+    def test_imagen_responde_304_si_el_etag_coincide(self):
+        url = f'/api/Tienditas/{self.con_foto.id_tiendita}/imagen/'
+        etag = self.client.get(url)['ETag']
+        res = self.client.get(url, HTTP_IF_NONE_MATCH=etag)
+        self.assertEqual(res.status_code, 304)
+        self.assertEqual(res.content, b'')
+
+    def test_imagen_externa_redirige(self):
+        res = self.client.get(f'/api/Tienditas/{self.externa.id_tiendita}/imagen/')
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(res['Location'], 'https://example.com/foto.jpg')
+
+    def test_imagen_inexistente_o_invalida_da_404(self):
+        for tiendita in (self.sin_foto, self.vacia, self.rota):
+            res = self.client.get(f'/api/Tienditas/{tiendita.id_tiendita}/imagen/')
+            self.assertEqual(res.status_code, 404, tiendita.nombre)
+        self.assertEqual(self.client.get('/api/Tienditas/99999/imagen/').status_code, 404)
+
+    def test_imagen_tiene_limite_por_ip(self):
+        url = f'/api/Tienditas/{self.con_foto.id_tiendita}/imagen/'
+        with patch.object(SimpleRateThrottle, 'THROTTLE_RATES', {'imagen': '2/minute'}):
+            self.assertEqual(self.client.get(url).status_code, 200)
+            self.assertEqual(self.client.get(url).status_code, 200)
+            self.assertEqual(self.client.get(url).status_code, 429)
+        # El resto del catálogo no comparte ese límite
+        self.assertEqual(self.client.get('/api/Tienditas/?sin_imagen=1').status_code, 200)
+
+    def test_imagen_es_solo_lectura(self):
+        res = self.client.post(f'/api/Tienditas/{self.con_foto.id_tiendita}/imagen/', {}, format='json')
+        self.assertIn(res.status_code, (401, 403, 405))

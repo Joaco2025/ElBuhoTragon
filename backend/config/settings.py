@@ -76,6 +76,8 @@ REST_FRAMEWORK = {
         'registro': os.getenv('THROTTLE_REGISTRO', '5/hour'),
         'chatbot': os.getenv('THROTTLE_CHATBOT', '30/hour'),
         'chatbot_global': os.getenv('THROTTLE_CHATBOT_GLOBAL', '400/day'),
+        # Generoso: el WiFi de la UNISON comparte IP entre muchos estudiantes
+        'imagen': os.getenv('THROTTLE_IMAGEN', '600/minute'),
     },
     # Número de proxies delante de Django (Caddy = 1) para leer la IP real del cliente
     'NUM_PROXIES': int(os.getenv('NUM_PROXIES', '0')) or None,

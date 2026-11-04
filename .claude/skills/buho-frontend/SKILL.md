@@ -1,31 +1,51 @@
 ---
 name: buho-frontend
-description: Pautas para cambiar el frontend de El Búho Tragón - diseño UNISON, tokens de color y tipografía, componentes React, llamadas a la API, rediseños y cómo previsualizarlos. Úsala al editar cualquier cosa en frontend/ (páginas, componentes, estilos, textos) o al planear un cambio estético.
+description: Pautas para cambiar el frontend de El Búho Tragón - identidad "La carta del campus", tokens de color y tipografía, componentes React compartidos, llamadas a la API, rediseños y cómo previsualizarlos. Úsala al editar cualquier cosa en frontend/ (páginas, componentes, estilos, textos) o al planear un cambio estético.
 ---
 
 # Frontend de El Búho Tragón (React 19 + Vite 6 + Tailwind 4)
 
 Lee primero `buho-contexto` si no lo has hecho.
 
-## Identidad visual (resumen; el detalle está en `.better-react-web-ui.md`)
+## Identidad visual (resumen; el detalle y el historial están en `.better-react-web-ui.md`)
 
-- **Personalidad:** académico, editorial, confiable, con calidez estudiantil. Voz sobria y clara, sin tono infantil.
-- **Colores** (definidos en `frontend/src/index.css` `@theme` y `tailwind.config.mjs`):
-  - Fondo `canvas` #0e2246 · estructuras (header, footer) `canvas-deep` #071326 · tarjetas #0a1830 con borde `white/[0.08]`
-  - Acento dorado `unison-gold-light` #B39A3A (énfasis, estrellas, líneas) · azul interactivo #163A70 / #204a8e
-  - Texto `paper` #F2F2F0 · abierto `emerald-400` · cerrado / alertas `rose-400`
-- **Tipografía:** `font-display` (Cormorant Garamond) para títulos, `font-sans` (Plus Jakarta Sans) para UI, `font-mono` en mayúsculas con `tracking-[0.2em]` para horarios, estados y datos numéricos.
-- **Evitar:** estética SaaS genérica (morados, gradientes fucsia), glassmorphism, tarjetas blancas sobre fondo oscuro, botones con brillo neón, píldoras flotantes.
+Rediseño de noviembre de 2026 ("La carta del campus"). La identidad nocturna anterior (fondo #0e2246, Cormorant, mono en mayúsculas) ya no aplica.
+
+- **Idea:** la pizarra de precios de las cafeterías es la interfaz. El inicio responde "¿cuánto traes?" con platillos reales, su precio, quién los vende y si está abierta.
+- **Voz:** útil y cercana, frases cortas en segunda persona, sentence case. Sin etiquetas en mayúsculas espaciadas ni "eyebrows".
+- **Colores** (solo en `frontend/src/index.css`, bloque `@theme`): fondo claro `fondo` #F4F6F9, `superficie` blanca, `hundido` para hover; tinta `tinta` #0E2246 y `tinta-suave`; acción `azul` #163A70 / `azul-hondo`; `oro` #E2B33C como relleno (chip activo, botón del Buhito; nunca texto sobre claro, para eso `oro-tinta`); estados `abierto`, `cerrado` (gris), `error`. Las superficies se separan por tono, no por líneas ni sombras.
+- **Tipografía:** `font-display` (Newsreader) para títulos y precios; `font-sans` (Plus Jakarta Sans) para la interfaz; clase `.cifras` para números alineados. Sin `font-mono`.
+- **Ilustración:** los búhos de la marca en sus colores reales (`lib/imagenes.js` → `ILUSTRACIONES`): carta, cartel (estados vacíos) y dormido (todo cerrado).
+- **Evitar:** morados, gradientes, glassmorphism, neón, filas de tarjetas idénticas con icono, números 01/02/03, crema con terracota.
+
+## Estructura
+
+| Carpeta | Qué hay |
+|---|---|
+| `src/main.jsx` | Rutas. Todas cuelgan de `AppShell`; las páginas se cargan con `React.lazy` salvo el inicio |
+| `components/layout/` | `AppShell` (header, pie, chat y avisos montados una vez), `Header`, `Footer`, `EncabezadoPagina` + `Contenedor`, `PantallaCuenta`, `PaginaLegal` |
+| `components/ui/` | Primitivas: `Boton`, `Campo`, `CampoContrasena`, `Chips`, `Aviso`, `Dialogo`, `Confirmar`, `Pestanas`, `EstadoApertura`, `Estrellas`, `Foto`, `EstadoVacio`, `Esqueleto`, `Toast` |
+| `components/chat/` | `ChatWidget` y `contextoAsistente` (`useAsistente().abrir(pregunta?)` abre el Buhito desde cualquier página) |
+| `components/cafeteria/`, `inicio/`, `admin/` | Piezas de cada pantalla |
+| `lib/` | `api.js` (fetch + caché del catálogo), `horario.js`, `catalogo.js` (filtros), `formato.js`, `sesion.js`, `imagenes.js`, `texto.js` |
+| `hooks/` | `useCatalogo`, `useAhora`, `useTitulo`, `useAtraparFoco` |
+
+Antes de crear un componente, busca si ya existe en `ui/`. No copies lógica de horarios, sesión o precios: está en `lib/`.
 
 ## Reglas de código
 
-1. **Tokens antes que valores sueltos.** Usa las clases del tema (`bg-canvas`, `text-paper`, `text-unison-gold-light`). Hoy hay muchos hex escritos a mano (#B39A3A aparece más de 90 veces); si tocas un componente, migra sus colores a tokens en vez de agregar más hex.
-2. **API solo vía `config.js`:** `import { API_URL, authHeaders } from "../config"` y `fetch(`${API_URL}/api/...`)`. Las peticiones que escriben (POST, PUT, PATCH, DELETE) llevan `headers: { ...authHeaders() }`.
-3. **Sin HTML crudo.** No uses `dangerouslySetInnerHTML`: el texto del chatbot y de las reseñas viene de usuarios o de un LLM.
-4. **La seguridad vive en el backend.** Ocultar un botón de admin en React es cosmético; el permiso real lo da `permissions.py`.
-5. **El chatbot** (`ChatWidget.jsx`) manda `{message, lat, lon, history}` con máximo 6 turnos; el backend corta mensajes de más de 500 caracteres.
-6. Iconos: `react-icons/fi` y `react-icons/fa`. No agregues librerías de componentes (shadcn, MUI) sin acordarlo.
-7. **Mapas: MapLibre GL (ya no Leaflet).** Usa siempre `components/map/BuhoMap.jsx` cargado con `React.lazy` (MapLibre pesa ~300 KB gzip y no debe ir en el bundle principal). Los colores del mapa están en `components/map/estiloUnison.js` (estilo dark de OpenFreeMap recoloreado y edificios 3D); cámbialos ahí si cambian los tokens. Los popups se arman con nodos de texto, nunca con `setHTML`. Para mapas dentro de una página con scroll pasa `gestosCooperativos`.
+1. **Solo tokens.** Nada de hex sueltos en componentes (excepción documentada: estrellas `#A6851C`). Si hace falta un color nuevo, agrégalo a `@theme` y a `.better-react-web-ui.md` con su contraste.
+2. **API solo vía `lib/api.js` / `config.js`.** `pedir(ruta)` para leer y `escribir(ruta, metodo, cuerpo)` para POST/PUT/PATCH/DELETE (ya agrega `authHeaders()`). Nunca escribas `http://127.0.0.1:8000` en un componente.
+3. **Catálogo compartido.** Usa `useCatalogo()`; pide `/api/Tienditas/?sin_imagen=1` (sin las fotos en base64) y lo guarda 5 minutos. Tras escribir algo en el admin llama a `invalidarCatalogo()`. Si el backend publicado no soporta `sin_imagen`, la respuesta trae `imagen_url` y todo sigue funcionando.
+4. **Fotos:** usa `<Foto>` con `fotoMiniatura(t)` en listas y `fotoPrincipal(t)` en la ficha. Nunca pongas el base64 de `imagen_url` en una lista si existe la versión local o `/api/Tienditas/<id>/imagen/`.
+5. **Sin HTML crudo.** No uses `dangerouslySetInnerHTML`: el texto del chatbot y de las reseñas viene de usuarios o de un LLM.
+6. **La seguridad vive en el backend.** Ocultar un botón de admin en React es cosmético; el permiso real lo da `permissions.py`.
+7. **El chatbot** (`components/chat/ChatWidget.jsx`) manda `{message, lat, lon, history}` con máximo 6 turnos; el backend corta mensajes de más de 500 caracteres (el input también limita a 500).
+8. **Texto dañado:** parte de los menús en la base tiene acentos dañados ("jam├│n"). `lib/texto.js` (`repararPlatillo`) lo corrige al mostrar; aplícalo a cualquier lugar nuevo que lea menús o reseñas.
+9. Iconos: `react-icons/fi` y `react-icons/fa`, siempre con `aria-hidden="true"`; los botones de solo icono llevan `aria-label`. No agregues librerías de componentes (shadcn, MUI) sin acordarlo.
+10. **Mapas: MapLibre GL.** Usa siempre `components/map/BuhoMap.jsx` cargado con `React.lazy` (pesa ~300 KB gzip y no debe ir en el bundle principal). Los colores del mapa están en `components/map/estiloUnison.js` (estilo **positron** de OpenFreeMap recoloreado con la paleta clara y edificios 3D); cámbialos ahí si cambian los tokens. Los popups se arman con nodos de texto, nunca con `setHTML`. Para mapas dentro de una página con scroll pasa `gestosCooperativos`.
+11. **Accesibilidad mínima:** controles de 44 px, foco visible (lo da `index.css`), etiqueta visible en cada campo (`Campo`), diálogos con `Dialogo` (atrapa foco, Escape, devuelve el foco), estados vacíos y de error con `EstadoVacio`. Respeta `prefers-reduced-motion` (regla global).
+12. **Filtros en la URL.** El inicio guarda búsqueda y filtros en `?q=&max=&cat=&fac=&abiertas=1`; los filtros nuevos también van ahí.
 
 ## Trabajar un cambio visual
 
@@ -36,14 +56,16 @@ npm run dev:api-real    # datos reales del sitio, sin backend local
 
 ⚠️ En este modo lo que guardes se escribe en producción. Navega y revisa, pero no envíes formularios de prueba.
 
+Para probar formularios, login o el admin, usa el backend local contra una **copia** de la base: `DJANGO_DB_PATH=/ruta/copia.db venv/bin/python manage.py runserver` y `npm run dev` (apunta a `http://127.0.0.1:8000`).
+
 Para tareas de diseño puntuales usa las skills genéricas de `.agents/skills/` (por ejemplo `critique`, `polish`, `a11y`, `adapt` para responsive, `hierarchy`, `harden`), siempre dentro de la identidad de arriba.
 
 ## Rediseño grande: flujo recomendado
 
-1. Rama `feat/rediseno-<tema>`.
-2. Cambia primero los tokens y la tipografía (`index.css`, `tailwind.config.mjs`), luego los componentes compartidos (`Header`, `Footer`, `CafeCard`, `PageHeader`) y al final las páginas.
-3. Revisa en móvil (375 px) y escritorio. Revisa contraste de texto dorado sobre azul.
-4. `npm run build` y `npm run lint` sin errores.
+1. Rama nueva (por ejemplo `feat/rediseno-<tema>`).
+2. Cambia primero los tokens y la tipografía (`index.css`, `index.html`), luego las primitivas de `components/ui/` y `components/layout/`, y al final las páginas.
+3. Revisa en móvil (375–390 px), tableta (768 px) y escritorio. Comprueba contraste: dorado solo como relleno.
+4. `npm run build` y `npm run lint` sin errores ni avisos.
 5. Publica la vista previa: `deploy/amplify/deploy-frontend.sh preview` y compártela.
 6. Con la aprobación: PR, merge a `main` y publicación del sitio principal (ver `buho-publicar`).
 

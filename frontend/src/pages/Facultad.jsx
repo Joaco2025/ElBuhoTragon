@@ -1,64 +1,89 @@
-// src/pages/Facultad.jsx
-import React from 'react';
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import ChatWidget from "../components/ChatWidget";
-import CampusMap from '../components/CampusMap';
-import PageHeader from '../components/PageHeader';
-import { FiNavigation, FiInfo, FiTarget } from 'react-icons/fi'; 
+// Mapa del campus: /facultad
+import { Suspense, lazy, useCallback, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import EncabezadoPagina, { Contenedor } from "../components/layout/EncabezadoPagina";
+import EstadoApertura from "../components/ui/EstadoApertura";
+import EstadoVacio from "../components/ui/EstadoVacio";
+import Esqueleto from "../components/ui/Esqueleto";
+import Boton from "../components/ui/Boton";
+import { puntoDeTiendita } from "../components/map/puntos";
+import { useCatalogo } from "../hooks/useCatalogo";
+import { useAhora } from "../hooks/useAhora";
+import { useTitulo } from "../hooks/useTitulo";
+import { estadoApertura } from "../lib/horario";
+import { facultadCorta } from "../lib/catalogo";
 
-const Facultad = () => {
-  return (
-    <div className="min-h-screen w-full bg-[#0e2246] text-[#F2F2F0] flex flex-col font-sans selection:bg-[#163A70] selection:text-white">
-      <Header />
+// MapLibre pesa ~300 KB comprimido: solo se descarga en las páginas con mapa
+const BuhoMap = lazy(() => import("../components/map/BuhoMap"));
 
-      <main className="flex-grow pt-28 pb-24 px-4 sm:px-8 lg:px-16 max-w-7xl mx-auto w-full">
-        {/* Encabezado Editorial Reutilizable */}
-        <PageHeader
-          eyebrow="Universidad de Sonora · Campus Hermosillo"
-          title="Mapa del Campus"
-          description="Distribución espacial de las cafeterías del campus universitario. Explora los cuadrantes académicos y selecciona cualquier punto de interés para consultar horarios y cartas de platillos."
-        />
+export default function Facultad() {
+  useTitulo("Mapa del campus");
+  const navigate = useNavigate();
+  const ahora = useAhora();
+  const { tienditas, facultadPorId, cargando, error, recargar } = useCatalogo();
 
-        {/* Contenedor del Mapa Editorial */}
-        <section 
-          className="relative w-full rounded-2xl overflow-hidden border border-white/[0.1] bg-[#0a1830] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.6)] flex flex-col"
-          aria-label="Mapa interactivo de cafeterías del campus"
-        >
-          <div className="h-[65vh] min-h-[480px] w-full relative z-0">
-            <CampusMap />
-          </div>
-          
-          {/* Barra inferior de Guía */}
-          <div className="bg-[#071326] px-6 py-6 border-t border-white/[0.08]">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-neutral-200 font-sans">
-              <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-full bg-[#163A70]/60 border border-[#204a8e]/30 flex items-center justify-center flex-shrink-0">
-                  <FiNavigation className="text-[#B39A3A]" size={17} />
-                </div>
-                <span>Navega y haz zoom interactivo sobre los cuadrantes del campus.</span>
-              </div>
-              <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-full bg-[#163A70]/60 border border-[#204a8e]/30 flex items-center justify-center flex-shrink-0">
-                  <FiTarget className="text-[#B39A3A]" size={17} />
-                </div>
-                <span>Toca cualquier marcador para abrir el resumen y carta de la tiendita.</span>
-              </div>
-              <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-full bg-[#163A70]/60 border border-[#204a8e]/30 flex items-center justify-center flex-shrink-0">
-                  <FiInfo className="text-[#B39A3A]" size={17} />
-                </div>
-                <span>Información sincronizada con el ciclo académico UNISON.</span>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
+  const puntos = useMemo(() => tienditas.map(puntoDeTiendita).filter(Boolean), [tienditas]);
+  const abrir = useCallback((punto) => navigate(`/cafeterias/${punto.id}`), [navigate]);
 
-      <Footer />
-      <ChatWidget />
-    </div>
+  // La misma información que el mapa, como lista (también para quien navega con teclado o lector)
+  const lista = useMemo(
+    () =>
+      [...tienditas].sort(
+        (a, b) => Number(estadoApertura(b, ahora).abierta) - Number(estadoApertura(a, ahora).abierta) || a.nombre.localeCompare(b.nombre)
+      ),
+    [tienditas, ahora]
   );
-};
 
-export default Facultad;
+  return (
+    <Contenedor className="pt-8 sm:pt-12">
+      <EncabezadoPagina
+        titulo="Mapa del campus"
+        descripcion="Dónde está cada cafetería de la Unidad Regional Centro. Toca un punto para ver su horario y abrir su menú."
+      />
+
+      {error ? (
+        <EstadoVacio titulo="No se pudieron cargar las cafeterías" accion={<Boton onClick={recargar}>Reintentar</Boton>} className="mt-8">
+          Revisa tu conexión e inténtalo otra vez.
+        </EstadoVacio>
+      ) : (
+        <div className="mt-8 sm:mt-10 grid gap-8 lg:grid-cols-[1fr_380px]">
+          <section aria-label="Mapa interactivo" className="relative h-[60dvh] min-h-[420px] lg:h-[72dvh] overflow-hidden rounded-2xl bg-hundido max-sm:-mx-4 max-sm:rounded-none">
+            <Suspense fallback={<div className="h-full w-full bg-hundido" />}>
+              <BuhoMap puntos={puntos} onAbrirPunto={abrir} />
+            </Suspense>
+            {cargando && (
+              <p className="absolute right-3 top-3 rounded-full bg-superficie px-4 py-2 text-sm font-semibold shadow" role="status">
+                Ubicando cafeterías…
+              </p>
+            )}
+          </section>
+
+          <section aria-labelledby="titulo-lista-mapa" className="lg:max-h-[72dvh] lg:overflow-y-auto lg:pr-1">
+            <h2 id="titulo-lista-mapa" className="font-display text-2xl font-semibold">
+              {cargando ? "Cafeterías" : `${tienditas.length} cafeterías`}
+            </h2>
+            {cargando ? (
+              <div className="mt-4 space-y-2" aria-hidden="true">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <Esqueleto key={i} className="h-16" />
+                ))}
+              </div>
+            ) : (
+              <ul className="mt-3 space-y-1">
+                {lista.map((t) => (
+                  <li key={t.id_tiendita}>
+                    <Link to={`/cafeterias/${t.id_tiendita}`} className="block rounded-caja px-3 py-2.5 -mx-3 hover:bg-superficie">
+                      <span className="block font-semibold leading-snug">{t.nombre}</span>
+                      <span className="block text-sm text-tinta-suave">{t.direccion || facultadCorta(facultadPorId[t.id_facultad])}</span>
+                      <EstadoApertura tiendita={t} ahora={ahora} className="mt-0.5" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      )}
+    </Contenedor>
+  );
+}

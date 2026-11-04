@@ -9,6 +9,15 @@ class TienditasSerializer(serializers.ModelSerializer):
         model = Tienditas
         fields = '__all__'
 
+
+class TienditasSinImagenSerializer(serializers.ModelSerializer):
+    """Lista ligera (?sin_imagen=1): sin el base64 de imagen_url; la foto se pide aparte."""
+    tiene_imagen = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = Tienditas
+        exclude = ['imagen_url']
+
 class FacultadesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Facultades

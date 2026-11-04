@@ -64,6 +64,11 @@ class ChatbotThrottle(_ThrottlePorIP):
     scope = 'chatbot'
 
 
+class ImagenThrottle(_ThrottlePorIP):
+    """GET /api/Tienditas/<id>/imagen/: público y más pesado que el resto del catálogo"""
+    scope = 'imagen'
+
+
 class ChatbotGlobalThrottle(SimpleRateThrottle):
     """Tope diario de mensajes al chatbot sumando a todos los usuarios (control de costo de Bedrock)."""
     scope = 'chatbot_global'

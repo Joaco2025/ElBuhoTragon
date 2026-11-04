@@ -89,28 +89,21 @@ IS2_ElBuhoTragon/
 │   ├── import_to_sqlite.py     # Script para importar datos a SQLite
 │   └── requirements.txt        # Dependencias del backend
 │
-├── frontend/                   # Cliente web en React
+├── frontend/                   # Cliente web en React (rediseño "La carta del campus", nov 2026)
 │   ├── src/
-│   │   ├── components/         # Componentes reutilizables
-│   │   │   ├── Header.jsx      # Barra de navegación
-│   │   │   ├── Footer.jsx      # Pie de página
-│   │   │   ├── ChatWidget.jsx  # Widget del chatbot de IA
-│   │   │   ├── CampusMap.jsx   # Mapa interactivo del campus
-│   │   │   ├── CafeCard.jsx    # Tarjeta de cafetería
-│   │   │   └── CafeCardGlass.jsx
-│   │   ├── pages/              # Páginas de la aplicación
-│   │   │   ├── Home.jsx        # Página principal
-│   │   │   ├── Cafeterias.jsx  # Listado de cafeterías
-│   │   │   ├── PlantillaCafeteria.jsx  # Detalle de cafetería
-│   │   │   ├── Facultad.jsx    # Información de facultad
-│   │   │   ├── Login.jsx       # Inicio de sesión
-│   │   │   ├── Registro.jsx    # Registro de usuarios
-│   │   │   ├── AdminDashboard.jsx  # Panel de administración
-│   │   │   ├── Contacto.jsx    # Página de contacto
-│   │   │   ├── Terminos.jsx    # Términos y condiciones
-│   │   │   └── Privacidad.jsx  # Política de privacidad
-│   │   ├── App.jsx
-│   │   └── main.jsx            # Punto de entrada y rutas
+│   │   ├── main.jsx            # Rutas (todas dentro de AppShell)
+│   │   ├── index.css           # Tokens de diseño (@theme de Tailwind 4)
+│   │   ├── components/
+│   │   │   ├── layout/         # AppShell, Header, Footer, encabezados de página
+│   │   │   ├── ui/             # Botones, campos, diálogos, chips, estados vacíos...
+│   │   │   ├── chat/           # El Buhito (ChatWidget)
+│   │   │   ├── cafeteria/      # Ficha, carta del menú, reseñas
+│   │   │   ├── inicio/         # Buscador, filtros, pizarra de precios
+│   │   │   ├── admin/          # Formularios del panel de administración
+│   │   │   └── map/            # Mapa MapLibre (carga diferida)
+│   │   ├── lib/                # API y caché, horarios, filtros, formato, sesión, imágenes
+│   │   ├── hooks/              # useCatalogo, useAhora, useTitulo, useAtraparFoco
+│   │   └── pages/              # Una por ruta (Home, PlantillaCafeteria, Facultad, Login...)
 │   └── package.json
 │
 ├── llm_rag/                    # Motor de Inteligencia Artificial (HPC)

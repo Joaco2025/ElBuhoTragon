@@ -7,9 +7,14 @@ Incluye: Autenticación, CRUD de recursos, Chatbot RAG
 import sys
 import os
 import logging
+import re
+import base64
+import binascii
+import hashlib
 
 # Django & DRF imports
-from django.http import HttpResponse
+from django.db.models import BooleanField, Case, Q, Value, When
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -18,7 +23,7 @@ from rest_framework import viewsets, filters, generics, status
 from rest_framework.views import APIView
 from rest_framework.serializers import ModelSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
-from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -28,6 +33,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Tienditas, Facultades, Menus, Usuarios, Resenas
 from .serializers import (
     TienditasSerializer,
+    TienditasSinImagenSerializer,
     FacultadesSerializer,
     MenusSerializer,
     UsuariosSerializer,
@@ -41,6 +47,7 @@ from .permissions import (
     RegistroThrottle,
     ChatbotThrottle,
     ChatbotGlobalThrottle,
+    ImagenThrottle,
 )
 
 # Configurar logging
@@ -153,12 +160,70 @@ class UsuarioActualView(APIView):
 # ========================================
 
 class TienditasViewSet(viewsets.ModelViewSet):
-    """CRUD de Cafeterías"""
+    """CRUD de Cafeterías
+
+    `imagen_url` guarda la foto como data URL en base64 (~0.5 MB por cafetería), así que
+    la lista completa pesa varios MB. Dos añadidos opcionales, sin cambiar la respuesta
+    por defecto:
+      - `?sin_imagen=1`: omite `imagen_url` y agrega `tiene_imagen` (bool).
+      - `GET /api/Tienditas/<id>/imagen/`: la foto como archivo, con caché y ETag.
+    """
     queryset = Tienditas.objects.all()
     serializer_class = TienditasSerializer
     permission_classes = [EsAdminOSoloLectura]
     filter_backends = [filters.SearchFilter]
     search_fields = ['nombre']
+
+    def _sin_imagen(self):
+        return self.request.method == 'GET' and self.request.query_params.get('sin_imagen') in ('1', 'true')
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self._sin_imagen():
+            # defer evita leer el base64 de SQLite; tiene_imagen se calcula en la consulta
+            queryset = queryset.defer('imagen_url').annotate(tiene_imagen=Case(
+                When(Q(imagen_url__isnull=True) | Q(imagen_url=''), then=Value(False)),
+                default=Value(True),
+                output_field=BooleanField(),
+            ))
+        return queryset
+
+    def get_serializer_class(self):
+        return TienditasSinImagenSerializer if self._sin_imagen() else TienditasSerializer
+
+    @action(detail=True, methods=['get'], url_path='imagen', throttle_classes=[ImagenThrottle])
+    def imagen(self, request, pk=None):
+        tiendita = self.get_object()
+        valor = (tiendita.imagen_url or '').strip()
+        if not valor:
+            raise Http404
+        if valor.startswith(('http://', 'https://')):
+            return HttpResponseRedirect(valor)
+
+        coincidencia = re.match(r'^data:(image/(?:jpeg|png|webp|gif));base64,(.+)$', valor, re.DOTALL)
+        if not coincidencia:
+            raise Http404
+        tipo, datos = coincidencia.groups()
+
+        etiqueta = '"' + hashlib.sha1(datos.encode()).hexdigest() + '"'
+        cabeceras = {
+            'ETag': etiqueta,
+            # La URL no cambia cuando el admin sube otra foto: caché corta y luego
+            # revalidación con ETag (304 sin cuerpo si sigue igual)
+            'Cache-Control': 'public, max-age=300, stale-while-revalidate=86400',
+            'X-Content-Type-Options': 'nosniff',
+        }
+        if request.headers.get('If-None-Match') == etiqueta:
+            respuesta = HttpResponse(status=304)
+        else:
+            try:
+                contenido = base64.b64decode(datos, validate=False)
+            except (binascii.Error, ValueError):
+                raise Http404
+            respuesta = HttpResponse(contenido, content_type=tipo)
+        for nombre, valor_cabecera in cabeceras.items():
+            respuesta[nombre] = valor_cabecera
+        return respuesta
 
 
 class MenusViewSet(viewsets.ModelViewSet):

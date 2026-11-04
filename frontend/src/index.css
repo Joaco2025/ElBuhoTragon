@@ -1,39 +1,53 @@
 @import "tailwindcss";
 
+/*
+ * Identidad "La carta del campus" (nov 2026). Detalle y razones en /.better-react-web-ui.md.
+ * Usa SIEMPRE estos tokens (bg-fondo, text-tinta, bg-azul, text-oro-tinta...), no hex sueltos.
+ */
 @theme {
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  
-  --color-canvas: #0e2246;
-  --color-canvas-deep: #071326;
-  --color-panel: #0a1830;
-  --color-panel-surface: #122b56;
-  --color-surface: #163466;
-  --color-surface-hover: #1b3d75;
-  --color-surface-border: rgba(255, 255, 255, 0.08);
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  --color-unison-blue: #163A70;
-  --color-unison-blue-deep: #0D2345;
-  --color-unison-blue-light: #204a8e;
-  --color-unison-gold: #8A741F;
-  --color-unison-gold-light: #B39A3A;
-  --color-unison-red: #702B32;
-  --color-unison-red-deep: #421C21;
+  /* Superficies: se separan por un paso de tono, no por líneas ni sombras */
+  --color-fondo: #F4F6F9;
+  --color-superficie: #FFFFFF;
+  --color-hundido: #E8ECF2;
+  --color-linea: #CBD3DF;       /* separadores de tablas y listas largas */
+  --color-borde-campo: #7D8799; /* contorno de inputs: 3.6:1 sobre blanco (WCAG 1.4.11) */
 
-  --color-paper: #F2F2F0;
-  --color-silver: #d4d4d4;
-  --color-muted: #737373;
+  /* Texto */
+  --color-tinta: #0E2246;       /* el azul nocturno de la versión anterior, ahora como tinta */
+  --color-tinta-suave: #45526A;
+  --color-tinta-clara: #C9D2E3;  /* texto secundario sobre azul-hondo (10:1) */
+
+  /* UNISON */
+  --color-azul: #163A70;        /* acción principal */
+  --color-azul-hondo: #0D2345;  /* hover de la acción, pie de página */
+  --color-oro: #E2B33C;         /* relleno: estado activo, marca de presupuesto (nunca texto sobre claro) */
+  --color-oro-tinta: #7A5F0E;   /* dorado legible como texto sobre claro (6.0:1) */
+  --color-oro-suave: #FBF1D3;
+
+  /* Del búho y del ladrillo de los edificios del campus: se usa poco */
+  --color-ladrillo: #A4452C;
+
+  /* Estados */
+  --color-abierto: #1E7A4C;
+  --color-abierto-suave: #E1F1E8;
+  --color-cerrado: #5B6578;
+  --color-error: #B42318;
+  --color-error-suave: #FDECEA;
+
+  --radius-caja: 0.5rem;
+
+  --ease-salida: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: dark;
-  color: #F2F2F0;
-  background-color: #0e2246;
-
+  color-scheme: light;
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  color: var(--color-tinta);
+  background-color: var(--color-fondo);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -41,154 +55,112 @@
 }
 
 html {
-  font-size: 17px;
-}
-
-@media (min-width: 1024px) {
-  html {
-    font-size: 18px;
-  }
+  scroll-padding-top: 5rem; /* las anclas no quedan debajo del header fijo */
 }
 
 body {
   margin: 0;
-  padding: 0;
-  width: 100%;
-  min-height: 100vh;
-  background-color: #0e2246;
-  color: #F2F2F0;
-  overflow-x: hidden;
+  min-height: 100dvh;
+  background-color: var(--color-fondo);
+  color: var(--color-tinta);
 }
 
-/* Tipografía de apoyo */
+/* Sin la espera del doble toque para zoom en controles */
+a, button, input, select, textarea, label {
+  touch-action: manipulation;
+}
+
+::selection {
+  background: var(--color-oro);
+  color: var(--color-tinta);
+}
+
+/* Títulos: Newsreader con tamaño óptico y un poco de tracking negativo */
 .font-display {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
 }
 
-.font-sans {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+/* Precios, horarios y conteos: cifras alineadas */
+.cifras {
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* Indicador accesible de foco de alta visibilidad (Dorado UNISON) */
+/* Foco visible en todo lo interactivo; en zonas oscuras el anillo es dorado */
 :focus-visible {
-  outline: 2px solid #B39A3A !important;
-  outline-offset: 2px !important;
+  outline: 3px solid var(--color-azul);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid #B39A3A !important;
-  outline-offset: 2px !important;
+.zona-oscura :focus-visible {
+  outline-color: var(--color-oro);
 }
 
-/* Scrollbar personalizado refinado */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Movimiento: entradas cortas que responden a una acción del usuario */
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-::-webkit-scrollbar-track {
-  background: #071326;
+.animate-aparecer {
+  animation: aparecer 220ms var(--ease-salida) both;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #B39A3A;
-}
-
-/* Animaciones suaves */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Mapa (MapLibre): marcador y popup con la paleta UNISON */
+/* Mapa (MapLibre): marcador y popup con la paleta */
 .buho-marcador {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border-radius: 9999px;
-  background: var(--color-unison-gold-light);
-  border: 3px solid var(--color-canvas-deep);
-  box-shadow: 0 0 0 2px var(--color-unison-gold-light), 0 6px 14px rgba(0, 0, 0, 0.6);
+  background: var(--color-azul);
+  border: 4px solid var(--color-oro);
+  box-shadow: 0 2px 6px rgba(14, 34, 70, 0.35);
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 150ms ease;
 }
 
 .buho-marcador:hover,
 .buho-marcador:focus-visible {
-  transform: scale(1.25);
-  outline: none;
+  transform: scale(1.2);
+  outline: 3px solid var(--color-tinta);
+  outline-offset: 2px;
 }
 
 /* Prefijo .maplibregl-map: el CSS de MapLibre se carga después (carga diferida) y
    con la misma especificidad nos ganaría */
 .maplibregl-map .maplibregl-popup-content {
-  background: var(--color-canvas-deep);
-  color: var(--color-paper);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 0.875rem;
-  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.8);
+  background: var(--color-superficie);
+  color: var(--color-tinta);
+  border-radius: var(--radius-caja);
+  box-shadow: 0 12px 28px -8px rgba(14, 34, 70, 0.35);
   padding: 14px 16px;
+  font-family: var(--font-sans);
 }
 
-.maplibregl-map .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: var(--color-canvas-deep); }
-.maplibregl-map .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: var(--color-canvas-deep); }
-.maplibregl-map .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--color-canvas-deep); }
-.maplibregl-map .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--color-canvas-deep); }
+.maplibregl-map .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: var(--color-superficie); }
+.maplibregl-map .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: var(--color-superficie); }
+.maplibregl-map .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--color-superficie); }
+.maplibregl-map .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--color-superficie); }
 
 .maplibregl-map .maplibregl-popup-close-button {
-  color: #a3a3a3;
-  font-size: 18px;
-  padding: 2px 8px;
+  color: var(--color-tinta-suave);
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
 }
 
 .maplibregl-map .maplibregl-popup-close-button:hover {
-  color: #ffffff;
-  background: transparent;
-}
-
-/* Controles de zoom y atribución en oscuro */
-.maplibregl-map .maplibregl-ctrl-group {
-  background: var(--color-canvas-deep);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: none;
-}
-
-.maplibregl-map .maplibregl-ctrl-group button + button {
-  border-top-color: rgba(255, 255, 255, 0.12);
-}
-
-.maplibregl-map .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
-  filter: invert(1) brightness(0.85);
-}
-
-.maplibregl-map .maplibregl-ctrl-attrib,
-.maplibregl-map .maplibregl-ctrl-attrib.maplibregl-compact {
-  background: rgba(7, 19, 38, 0.85);
-  color: var(--color-silver);
-}
-
-.maplibregl-map .maplibregl-ctrl-attrib a {
-  color: var(--color-silver);
-}
-
-.maplibregl-map .maplibregl-ctrl-attrib-button {
-  filter: invert(1);
+  color: var(--color-tinta);
+  background: var(--color-hundido);
 }

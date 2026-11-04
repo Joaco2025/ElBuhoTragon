@@ -1,35 +1,38 @@
-// Estilo del mapa con la paleta UNISON.
-// Base: estilo "dark" de OpenFreeMap (vectorial, gratuito, sin llave, datos de OpenStreetMap).
+// Estilo del mapa con la paleta del sitio (fondo claro, tinta azul UNISON).
+// Base: estilo "positron" de OpenFreeMap (vectorial, gratuito, sin llave, datos de OpenStreetMap).
 // Se descarga una vez, se recolorea capa por capa y se le agregan edificios en 3D.
+// Antes se usaba el estilo "dark" con la paleta nocturna; cambió con la identidad de nov 2026.
 
-const ESTILO_BASE = "https://tiles.openfreemap.org/styles/dark";
+const ESTILO_BASE = "https://tiles.openfreemap.org/styles/positron";
 
-// Mismos valores que los tokens de frontend/src/index.css (@theme)
+// Tonos derivados de los tokens de frontend/src/index.css (@theme)
 const PALETA = {
-  fondo: "#071326",        // canvas-deep
-  suelo: "#0e2246",        // canvas
-  agua: "#0d2345",         // unison-blue-deep
-  parque: "#10304f",
-  edificio: "#122b56",     // panel-surface
-  edificio3d: "#163466",   // surface
-  calleMenor: "#1b3d75",   // surface-hover
-  calleMayor: "#204a8e",   // unison-blue-light
-  autopista: "#2a5aa8",
-  borde: "#0a1830",
-  linea: "#3a4a66",
-  texto: "#d4d4d4",        // silver
-  textoFuerte: "#F2F2F0",  // paper
-  textoSuave: "#8a8a8a",
+  // Suelo un par de tonos más oscuro que la página para que las calles blancas se lean
+  fondo: "#D9E0E9",
+  suelo: "#D3DAE4",
+  agua: "#A9C3E2",
+  parque: "#C9DCC2",
+  edificio: "#C3CDDA",
+  edificio3d: "#B3BFD1",
+  calleMenor: "#FFFFFF",
+  calleMayor: "#FFFFFF",
+  autopista: "#F1D58A",    // oro aclarado
+  borde: "#A9B4C5",
+  linea: "#8792A6",
+  texto: "#45526A",        // tinta-suave
+  textoFuerte: "#0E2246",  // tinta
+  halo: "#FFFFFF",
 };
 
 // [prefijo del id de capa, propiedad de pintura, color]; gana la primera coincidencia
 const REGLAS = [
   ["background", "background-color", PALETA.fondo],
-  ["water_name", "text-color", PALETA.textoSuave],
+  ["water_name", "text-color", PALETA.texto],
+  ["waterway_line_label", "text-color", PALETA.texto],
   ["waterway", "line-color", PALETA.agua],
   ["water", "fill-color", PALETA.agua],
   ["landuse_residential", "fill-color", PALETA.suelo],
-  ["landuse_park", "fill-color", PALETA.parque],
+  ["park", "fill-color", PALETA.parque],
   ["landcover_wood", "fill-color", PALETA.parque],
   ["building", "fill-color", PALETA.edificio],
   ["aeroway", "fill-color", PALETA.edificio],
@@ -40,12 +43,14 @@ const REGLAS = [
   ["highway_major_casing", "line-color", PALETA.borde],
   ["highway_major", "line-color", PALETA.calleMayor],
   ["highway_motorway_casing", "line-color", PALETA.borde],
+  ["highway_motorway_bridge_casing", "line-color", PALETA.borde],
   ["highway_motorway", "line-color", PALETA.autopista],
-  ["highway_name", "text-color", PALETA.textoSuave],
+  ["tunnel_motorway", "line-color", PALETA.borde],
+  ["highway-name", "text-color", PALETA.texto],
   ["railway", "line-color", PALETA.linea],
   ["boundary", "line-color", PALETA.linea],
-  ["place_city", "text-color", PALETA.textoFuerte],
-  ["place", "text-color", PALETA.texto],
+  ["label_city", "text-color", PALETA.textoFuerte],
+  ["label", "text-color", PALETA.texto],
 ];
 
 function recolorear(estilo) {
@@ -55,7 +60,7 @@ function recolorear(estilo) {
     );
     if (regla) capa.paint = { ...capa.paint, [regla[1]]: regla[2] };
     if (capa.type === "symbol" && capa.paint?.["text-halo-color"] !== undefined) {
-      capa.paint["text-halo-color"] = PALETA.fondo;
+      capa.paint["text-halo-color"] = PALETA.halo;
     }
   }
 
@@ -71,7 +76,7 @@ function recolorear(estilo) {
       "fill-extrusion-color": PALETA.edificio3d,
       "fill-extrusion-height": ["coalesce", ["get", "render_height"], 6],
       "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
-      "fill-extrusion-opacity": 0.8,
+      "fill-extrusion-opacity": 0.85,
     },
   });
   return estilo;

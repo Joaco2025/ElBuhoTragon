@@ -1,171 +1,93 @@
-// src/pages/Contacto.jsx
-import React, { useState } from 'react';
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import ChatWidget from "../components/ChatWidget";
-import PageHeader from "../components/PageHeader";
-import { FiMail, FiMapPin, FiGithub, FiCheck } from 'react-icons/fi';
+// Contacto: /contacto
+// No hay backend de correo: el formulario abre la app de correo del usuario con el mensaje
+// ya escrito (mailto:). La versión anterior mostraba "Mensaje recibido" sin enviar nada.
+import { useState } from "react";
+import { FiExternalLink, FiMail, FiMapPin } from "react-icons/fi";
+import EncabezadoPagina, { Contenedor } from "../components/layout/EncabezadoPagina";
+import Campo from "../components/ui/Campo";
+import Boton from "../components/ui/Boton";
+import Aviso from "../components/ui/Aviso";
+import { useTitulo } from "../hooks/useTitulo";
 
-const Contacto = () => {
-  const [enviado, setEnviado] = useState(false);
-  const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
-  const [mensaje, setMensaje] = useState('');
+const CORREO = "a223201053@unison.mx";
+const REPOSITORIO = "https://github.com/OwenSolis03/IS2_ElBuhoTragon";
 
-  const handleSubmit = (e) => {
+const MOTIVOS = ["Precio o platillo desactualizado", "Horario incorrecto", "Cafetería que falta", "Problema con mi cuenta", "Otro"];
+
+export default function Contacto() {
+  useTitulo("Contacto");
+  const [motivo, setMotivo] = useState(MOTIVOS[0]);
+  const [nombre, setNombre] = useState("");
+  const [mensaje, setMensaje] = useState("");
+  const [abierto, setAbierto] = useState(false);
+
+  const enviar = (e) => {
     e.preventDefault();
-    setEnviado(true);
+    const asunto = `[El Búho Tragón] ${motivo}`;
+    const cuerpo = `${mensaje.trim()}\n\n${nombre.trim() ? `— ${nombre.trim()}` : ""}`;
+    window.location.href = `mailto:${CORREO}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+    setAbierto(true);
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0e2246] text-[#F2F2F0] flex flex-col font-sans selection:bg-[#163A70] selection:text-white">
-      <Header />
+    <Contenedor className="pt-8 sm:pt-12">
+      <EncabezadoPagina
+        titulo="Contacto"
+        descripcion="¿Viste un precio que cambió, un horario incorrecto o una cafetería que falta? Avísanos y lo corregimos."
+      />
 
-      <main className="flex-grow pt-28 pb-24 px-4 sm:px-8 lg:px-16 max-w-6xl mx-auto w-full">
-        {/* Encabezado Editorial */}
-        <PageHeader
-          eyebrow="Universidad de Sonora · Campus Hermosillo"
-          title="Contacto & Soporte"
-          description="¿Detectaste alguna modificación en menús, precios desactualizados o deseas sugerir información de una cafetería? Envíanos tus observaciones."
-          maxWidth="max-w-6xl"
-        />
+      <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_380px] lg:gap-16">
+        <form onSubmit={enviar} className="rounded-2xl bg-superficie p-5 sm:p-8 space-y-5">
+          <Campo como="select" etiqueta="Motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)}>
+            {MOTIVOS.map((m) => (
+              <option key={m}>{m}</option>
+            ))}
+          </Campo>
+          <Campo etiqueta="Tu nombre (opcional)" autoComplete="name" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+          <Campo
+            como="textarea"
+            etiqueta="Mensaje"
+            required
+            rows={5}
+            value={mensaje}
+            onChange={(e) => setMensaje(e.target.value)}
+            placeholder="Por ejemplo: en la cafetería de Derecho la torta de pierna ya cuesta $75."
+          />
+          {abierto && (
+            <Aviso tipo="info">
+              Se abrió tu app de correo con el mensaje listo; envíalo desde ahí. Si no se abrió, escribe a {CORREO}.
+            </Aviso>
+          )}
+          <Boton type="submit">
+            <FiMail aria-hidden="true" /> Escribir correo
+          </Boton>
+        </form>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-          {/* Columna Izquierda: Información Académica */}
-          <div className="lg:col-span-5 space-y-8">
-            <div>
-              <span className="font-mono text-sm uppercase tracking-widest text-[#B39A3A] block mb-2.5 flex items-center gap-2 font-semibold">
-                <FiMapPin size={16} />
-                <span>Ubicación Académica</span>
+        <div className="space-y-8">
+          <section aria-labelledby="contacto-correo">
+            <h2 id="contacto-correo" className="font-display text-2xl font-semibold">Correo</h2>
+            <a href={`mailto:${CORREO}`} className="mt-1 inline-flex min-h-11 items-center font-semibold text-azul underline underline-offset-4 break-all">
+              {CORREO}
+            </a>
+          </section>
+          <section aria-labelledby="contacto-donde">
+            <h2 id="contacto-donde" className="font-display text-2xl font-semibold">Dónde estamos</h2>
+            <p className="mt-2 flex gap-2.5 text-[1.05rem]">
+              <FiMapPin className="mt-1.5 shrink-0 text-tinta-suave" aria-hidden="true" />
+              <span>
+                Departamento de Matemáticas, Licenciatura en Ciencias de la Computación. Universidad de Sonora, Hermosillo, Sonora.
               </span>
-              <p className="text-base text-neutral-200 font-light leading-relaxed">
-                Universidad de Sonora<br />
-                Departamento de Matemáticas<br />
-                Licenciatura en Ciencias de la Computación<br />
-                Hermosillo, Sonora, México
-              </p>
-            </div>
-
-            <div>
-              <span className="font-mono text-sm uppercase tracking-widest text-[#B39A3A] block mb-2.5 flex items-center gap-2 font-semibold">
-                <FiMail size={16} />
-                <span>Correo Institucional</span>
-              </span>
-              <p className="text-base font-mono text-neutral-200">
-                a223201053@unison.mx
-              </p>
-            </div>
-
-            <div>
-              <span className="font-mono text-sm uppercase tracking-widest text-[#B39A3A] block mb-2.5 flex items-center gap-2 font-semibold">
-                <FiGithub size={16} />
-                <span>Repositorio del Proyecto</span>
-              </span>
-              <a 
-                href="https://github.com/OwenSolis03/IS2_ElBuhoTragon" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-sm font-mono text-neutral-200 hover:text-white underline inline-block"
-              >
-                github.com/OwenSolis03/IS2_ElBuhoTragon ↗
-              </a>
-            </div>
-          </div>
-
-          {/* Columna Derecha: Formulario */}
-          <div className="lg:col-span-7">
-            <div className="p-8 sm:p-10 rounded-2xl bg-[#0a1830] border border-white/[0.1] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)]">
-              {enviado ? (
-                <div className="py-12 text-center space-y-4 animate-fade-in">
-                  <div className="w-14 h-14 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto">
-                    <FiCheck size={28} />
-                  </div>
-                  <h3 className="font-display text-3xl sm:text-4xl text-white font-normal">
-                    Mensaje Recibido
-                  </h3>
-                  <p className="text-neutral-200 text-base font-light max-w-sm mx-auto leading-relaxed">
-                    Agradecemos tus observaciones. El equipo de desarrollo del proyecto revisará tu reporte para actualizar el catálogo.
-                  </p>
-                  <button
-                    onClick={() => { setEnviado(false); setNombre(''); setEmail(''); setMensaje(''); }}
-                    className="mt-4 px-7 py-3 rounded-full bg-white text-black text-sm font-mono uppercase tracking-wider hover:bg-neutral-200 transition-colors font-semibold cursor-pointer shadow-md"
-                  >
-                    Enviar otro mensaje
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div>
-                    <label 
-                      htmlFor="contacto-nombre" 
-                      className="block font-mono text-xs uppercase tracking-wider text-neutral-300 mb-2 font-medium"
-                    >
-                      Nombre Completo
-                    </label>
-                    <input
-                      id="contacto-nombre"
-                      type="text"
-                      required
-                      value={nombre}
-                      onChange={(e) => setNombre(e.target.value)}
-                      placeholder="Tu nombre y apellido"
-                      className="w-full bg-[#071326] border border-white/[0.12] focus:border-[#B39A3A] text-white text-base rounded-xl px-4 py-3.5 placeholder-neutral-400 focus:outline-none transition-colors font-sans"
-                    />
-                  </div>
-
-                  <div>
-                    <label 
-                      htmlFor="contacto-email" 
-                      className="block font-mono text-xs uppercase tracking-wider text-neutral-300 mb-2 font-medium"
-                    >
-                      Correo Electrónico
-                    </label>
-                    <input
-                      id="contacto-email"
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="correo@ejemplo.com"
-                      className="w-full bg-[#071326] border border-white/[0.12] focus:border-[#B39A3A] text-white text-base rounded-xl px-4 py-3.5 placeholder-neutral-400 focus:outline-none transition-colors font-sans"
-                    />
-                  </div>
-
-                  <div>
-                    <label 
-                      htmlFor="contacto-mensaje" 
-                      className="block font-mono text-xs uppercase tracking-wider text-neutral-300 mb-2 font-medium"
-                    >
-                      Mensaje u Observación
-                    </label>
-                    <textarea
-                      id="contacto-mensaje"
-                      required
-                      rows="4"
-                      value={mensaje}
-                      onChange={(e) => setMensaje(e.target.value)}
-                      placeholder="Indica qué cafetería, platillo o sugerencia deseas compartir..."
-                      className="w-full bg-[#071326] border border-white/[0.12] focus:border-[#B39A3A] text-white text-base rounded-xl p-4 placeholder-neutral-400 focus:outline-none transition-colors resize-none font-sans leading-relaxed"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-3.5 bg-white text-black font-sans text-sm font-mono uppercase tracking-wider rounded-full hover:bg-neutral-200 transition-colors cursor-pointer font-semibold shadow-md mt-2"
-                  >
-                    Enviar Mensaje
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
+            </p>
+          </section>
+          <section aria-labelledby="contacto-codigo">
+            <h2 id="contacto-codigo" className="font-display text-2xl font-semibold">Código</h2>
+            <a href={REPOSITORIO} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex min-h-11 items-center gap-2 font-semibold text-azul underline underline-offset-4">
+              Repositorio en GitHub <FiExternalLink aria-hidden="true" />
+              <span className="sr-only">(se abre en otra pestaña)</span>
+            </a>
+          </section>
         </div>
-      </main>
-
-      <Footer />
-      <ChatWidget />
-    </div>
+      </div>
+    </Contenedor>
   );
-};
-
-export default Contacto;
+}
